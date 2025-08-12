@@ -705,6 +705,88 @@
             border-radius: 8px;
             font-size: 0.9rem;
         }
+
+        .detail-setting-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .detail-setting-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .detail-setting-content {
+            flex: 1;
+        }
+
+        .detail-setting-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 2px;
+            font-weight: 500;
+        }
+
+        .detail-setting-value {
+            font-size: 1rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .photo-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .photo-modal.show {
+            display: flex;
+        }
+
+        .photo-modal img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .photo-modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -955,6 +1037,12 @@
             </div>
         </div>
     </div>
+    </div>
+
+    <!-- 写真拡大モーダル -->
+    <div id="photoModal" class="photo-modal">
+        <button class="photo-modal-close" onclick="closePhotoModal()">&times;</button>
+        <img id="modalPhoto" src="" alt="拡大写真">
     </div>
 
     <script>
@@ -1665,7 +1753,7 @@
             const detailContent = document.getElementById('detailContent');
             
             const photos = race.photos.length > 0 
-                ? `<div class="detail-photos">${race.photos.map(photo => `<img src="${photo}" alt="マシン写真">`).join('')}</div>`
+                ? `<div class="detail-photos">${race.photos.map((photo, index) => `<img src="${photo}" alt="マシン写真" onclick="showPhotoModal('${photo}', ${index})" style="cursor: pointer;">`).join('')}</div>`
                 : '';
                 
             const videoUrl = race.raceVideo || getVideoUrl(race.id);
@@ -1684,56 +1772,84 @@
                 
                 ${photos}
                 
-                <div class="form-group">
-                    <label>電圧</label>
-                    <p>${race.voltage || '未設定'}</p>
+                <div class="detail-setting-item">
+                    <div class="detail-setting-icon" style="background: #e3f2fd; color: #1976d2;">⚡</div>
+                    <div class="detail-setting-content">
+                        <div class="detail-setting-label">電圧</div>
+                        <div class="detail-setting-value">${race.voltage || '未設定'}${race.voltage ? 'V' : ''}</div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>チェッカー速度</label>
-                    <p>${race.checkerSpeed || '未設定'}</p>
+                <div class="detail-setting-item">
+                    <div class="detail-setting-icon" style="background: #f3e5f5; color: #7b1fa2;">🏃</div>
+                    <div class="detail-setting-content">
+                        <div class="detail-setting-label">チェッカー速度</div>
+                        <div class="detail-setting-value">${race.checkerSpeed || '未設定'}</div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>タイヤ径</label>
-                    <p>${race.tireDiameter || '未設定'}</p>
+                <div class="detail-setting-item">
+                    <div class="detail-setting-icon" style="background: #e8f5e8; color: #388e3c;">⭕</div>
+                    <div class="detail-setting-content">
+                        <div class="detail-setting-label">タイヤ径</div>
+                        <div class="detail-setting-value">${race.tireDiameter || '未設定'}${race.tireDiameter ? 'mm' : ''}</div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>タイヤの種類</label>
-                    <p>${race.tireType || '未設定'}</p>
+                <div class="detail-setting-item">
+                    <div class="detail-setting-icon" style="background: #fff3e0; color: #f57c00;">🛞</div>
+                    <div class="detail-setting-content">
+                        <div class="detail-setting-label">タイヤの種類</div>
+                        <div class="detail-setting-value">${race.tireType || '未設定'}</div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>モーター</label>
-                    <p>${race.motor || '未設定'}</p>
+                <div class="detail-setting-item">
+                    <div class="detail-setting-icon" style="background: #fce4ec; color: #c2185b;">🔧</div>
+                    <div class="detail-setting-content">
+                        <div class="detail-setting-label">モーター</div>
+                        <div class="detail-setting-value">${race.motor || '未設定'}</div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>ギア比</label>
-                    <p>${race.gearRatio || '未設定'}</p>
+                <div class="detail-setting-item">
+                    <div class="detail-setting-icon" style="background: #f1f8e9; color: #689f38;">⚙️</div>
+                    <div class="detail-setting-content">
+                        <div class="detail-setting-label">ギア比</div>
+                        <div class="detail-setting-value">${race.gearRatio || '未設定'}</div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>ブレーキ</label>
-                    <p>${race.brake || '未設定'}</p>
+                <div class="detail-setting-item">
+                    <div class="detail-setting-icon" style="background: #ffebee; color: #d32f2f;">🛑</div>
+                    <div class="detail-setting-content">
+                        <div class="detail-setting-label">ブレーキ</div>
+                        <div class="detail-setting-value">${race.brake || '未設定'}</div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>備考</label>
-                    <p>${race.remarks || '未設定'}</p>
+                <div class="detail-setting-item">
+                    <div class="detail-setting-icon" style="background: #e8eaf6; color: #3f51b5;">📝</div>
+                    <div class="detail-setting-content">
+                        <div class="detail-setting-label">備考</div>
+                        <div class="detail-setting-value">${race.remarks || '未設定'}</div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>レースタイム</label>
-                    <p>${race.raceTime ? race.raceTime + '秒' : '未設定'}</p>
+                <div class="detail-setting-item">
+                    <div class="detail-setting-icon" style="background: #e0f2f1; color: #00796b;">⏱️</div>
+                    <div class="detail-setting-content">
+                        <div class="detail-setting-label">レースタイム</div>
+                        <div class="detail-setting-value">${race.raceTime ? race.raceTime + '秒' : '未設定'}</div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>順位</label>
-                    <p style="${race.raceRank === '1位' ? 'color: #ffd700; font-weight: bold; font-size: 1.2em;' : race.raceRank === '2位' ? 'color: #c0c0c0; font-weight: bold;' : race.raceRank === '3位' ? 'color: #cd7f32; font-weight: bold;' : ''}">
-                        ${race.raceRank ? (race.raceRank === '1位' ? '🏆 ' + race.raceRank : race.raceRank === '2位' ? '🥈 ' + race.raceRank : race.raceRank === '3位' ? '🥉 ' + race.raceRank : race.raceRank) : '未設定'}
-                    </p>
+                <div class="detail-setting-item">
+                    <div class="detail-setting-icon" style="background: ${race.raceRank === '1位' ? '#fff8e1' : race.raceRank === '2位' ? '#f3e5f5' : race.raceRank === '3位' ? '#fff3e0' : '#f5f5f5'}; color: ${race.raceRank === '1位' ? '#f57c00' : race.raceRank === '2位' ? '#7b1fa2' : race.raceRank === '3位' ? '#ff6f00' : '#666'};">${race.raceRank === '1位' ? '🏆' : race.raceRank === '2位' ? '🥈' : race.raceRank === '3位' ? '🥉' : '🏁'}</div>
+                    <div class="detail-setting-content">
+                        <div class="detail-setting-label">順位</div>
+                        <div class="detail-setting-value">${race.raceRank || '未設定'}</div>
+                    </div>
                 </div>
                 
                 ${raceVideo}
@@ -2267,7 +2383,27 @@
         }
 
         // アプリのバージョン（手動更新）
-        const APP_VERSION = 'v1.0.9';
+        const APP_VERSION = 'v1.0.10';
+        
+        // 写真拡大表示機能
+        function showPhotoModal(photoSrc, index) {
+            const modal = document.getElementById('photoModal');
+            const modalPhoto = document.getElementById('modalPhoto');
+            modalPhoto.src = photoSrc;
+            modal.classList.add('show');
+        }
+        
+        function closePhotoModal() {
+            const modal = document.getElementById('photoModal');
+            modal.classList.remove('show');
+        }
+        
+        // モーダル背景をクリックして閉じる
+        document.getElementById('photoModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePhotoModal();
+            }
+        });
         
         // Service Worker バージョン情報を取得
         async function getServiceWorkerVersion() {
