@@ -637,6 +637,43 @@
             margin-left: 0.5rem;
             box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
         }
+        /* 動画コンテナのスタイル */
+        .video-container {
+            width: 100%;
+            max-width: 300px;
+            margin: 0.5rem 0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+        }
+
+        .video-container video {
+            width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            display: block;
+            border-radius: 8px;
+        }
+
+        /* レース詳細画面の動画表示 */
+        .race-detail .video-container {
+            max-width: 100%;
+        }
+
+        .race-detail .video-container video {
+            max-height: 300px;
+        }
+
+        .video-placeholder {
+            padding: 2rem;
+            text-align: center;
+            color: #666;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -895,6 +932,10 @@
         let currentEditRaceId = null;
         let db = null;
         
+        // 動画ファイル管理
+        let videoFiles = new Map(); // raceId -> File object
+        let videoUrls = new Map();  // raceId -> ObjectURL
+        
         // ドラッグ&ドロップ関連
         let draggedElement = null;
         let draggedRaceId = null;
@@ -905,6 +946,38 @@
         let touchStartY = 0;
         let isSwiping = false;
         let swipeThreshold = 100;
+
+        // 動画URL管理関数
+        function createVideoUrl(raceId, file) {
+            // 既存のURLがあればクリーンアップ
+            if (videoUrls.has(raceId)) {
+                URL.revokeObjectURL(videoUrls.get(raceId));
+            }
+            
+            // 新しいObjectURLを作成
+            const objectUrl = URL.createObjectURL(file);
+            videoFiles.set(raceId, file);
+            videoUrls.set(raceId, objectUrl);
+            
+            return objectUrl;
+        }
+        
+        function getVideoUrl(raceId) {
+            return videoUrls.get(raceId);
+        }
+        
+        function removeVideoUrl(raceId) {
+            if (videoUrls.has(raceId)) {
+                URL.revokeObjectURL(videoUrls.get(raceId));
+                videoUrls.delete(raceId);
+            }
+            videoFiles.delete(raceId);
+        }
+        
+        // ページ離脱時のクリーンアップ
+        window.addEventListener('beforeunload', () => {
+            videoUrls.forEach(url => URL.revokeObjectURL(url));
+        });
 
         // IndexedDBの初期化
         function initDB() {
@@ -1038,6 +1111,14 @@
                 if (savedRaces && savedRaces.length > 0) {
                     races = savedRaces;
                     races.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    
+                    // 動画ファイルを持つレースがある場合の警告表示
+                    const videoRaces = races.filter(race => race.hasVideo);
+                    if (videoRaces.length > 0) {
+                        setTimeout(() => {
+                            alert(`${videoRaces.length}件のレース動画は再選択が必要です。動画はセッション期間中のみ保持されます。`);
+                        }, 1000);
+                    }
                 }
                 
                 if (savedEvents && savedEvents.value) {
@@ -1077,14 +1158,25 @@
             renderRaceList();
         }
 
-        // データをIndexedDBに保存
+        // データをIndexedDBに保存（動画データを除外）
         async function saveData() {
             try {
                 if (!db) {
                     await initDB();
                 }
                 
-                await saveDataToDB('races', races);
+                // 動画データを除外したレースデータを作成
+                const racesForSave = races.map(race => {
+                    const raceData = { ...race };
+                    // 動画URLは保存せず、フラグのみ保存
+                    if (race.raceVideo) {
+                        raceData.hasVideo = true;
+                        delete raceData.raceVideo;
+                    }
+                    return raceData;
+                });
+                
+                await saveDataToDB('races', racesForSave);
                 await saveDataToDB('settings', {
                     key: 'events',
                     value: events
@@ -1092,7 +1184,16 @@
             } catch (error) {
                 console.error('IndexedDB保存エラー:', error);
                 try {
-                    localStorage.setItem('mini4wd_races', JSON.stringify(races));
+                    // localStorageにフォールバック（動画データ除外）
+                    const racesForSave = races.map(race => {
+                        const raceData = { ...race };
+                        if (race.raceVideo) {
+                            raceData.hasVideo = true;
+                            delete raceData.raceVideo;
+                        }
+                        return raceData;
+                    });
+                    localStorage.setItem('mini4wd_races', JSON.stringify(racesForSave));
                     localStorage.setItem('mini4wd_events', JSON.stringify(events));
                 } catch (lsError) {
                     if (lsError.name === 'QuotaExceededError') {
@@ -1522,8 +1623,11 @@
                 ? `<div class="detail-photos">${race.photos.map(photo => `<img src="${photo}" alt="マシン写真">`).join('')}</div>`
                 : '';
                 
-            const raceVideo = race.raceVideo 
-                ? `<div class="form-group"><label>レース動画</label><video controls src="${race.raceVideo}"></video></div>`
+            const videoUrl = getVideoUrl(race.id);
+            const raceVideo = videoUrl 
+                ? `<div class="form-group"><label>レース動画</label><video controls src="${videoUrl}"></video></div>`
+                : race.hasVideo 
+                ? `<div class="form-group"><label>レース動画</label><div class="video-placeholder">動画ファイルを再選択してください</div></div>`
                 : '';
             
             detailContent.innerHTML = `
@@ -1610,8 +1714,11 @@
             
             if (race) {
                 document.getElementById('raceTime').value = race.raceTime || '';
-                if (race.raceVideo) {
-                    document.getElementById('videoPreview').innerHTML = `<video controls src="${race.raceVideo}" style="width: 100%; max-height: 200px; border-radius: 8px;"></video>`;
+                const videoUrl = getVideoUrl(race.id);
+                if (videoUrl) {
+                    document.getElementById('videoPreview').innerHTML = `<video controls src="${videoUrl}"></video>`;
+                } else if (race.hasVideo) {
+                    document.getElementById('videoPreview').innerHTML = `<div class="video-placeholder">動画ファイルを再選択してください</div>`;
                 } else {
                     document.getElementById('videoPreview').innerHTML = '';
                 }
@@ -1645,33 +1752,31 @@
             
             if (videoFile) {
                 // 動画サイズをチェック
-                const maxSize = 50 * 1024 * 1024; // 50MB
+                const maxSize = 1024 * 1024 * 1024; // 1GB
                 if (videoFile.size > maxSize) {
-                    alert('動画サイズが大きすぎます。50MB以下の動画を選択してください。');
+                    alert('動画サイズが大きすぎます。1GB以下の動画を選択してください。');
                     return;
                 }
                 
                 // 動画サイズをログ出力
                 console.log(`動画サイズ: ${(videoFile.size / (1024 * 1024)).toFixed(1)}MB`);
                 
-                const reader = new FileReader();
-                reader.onload = async function(e) {
-                    const originalVideo = race.raceVideo;
-                    race.raceVideo = e.target.result;
+                try {
+                    // ObjectURLを作成して動画参照を保存
+                    const videoUrl = createVideoUrl(currentRaceId, videoFile);
+                    race.raceVideo = videoUrl;
                     
-                    try {
-                        await saveData();
-                        renderRaceList();
-                        showRaceDetail(currentRaceId);
-                        closeResultModal();
-                    } catch (error) {
-                        // 保存に失敗した場合、元に戻す
-                        race.raceVideo = originalVideo;
-                        alert('動画の保存に失敗しました。容量が不足している可能性があります。');
-                        console.error('動画保存エラー:', error);
-                    }
-                };
-                reader.readAsDataURL(videoFile);
+                    await saveData();
+                    renderRaceList();
+                    showRaceDetail(currentRaceId);
+                    closeResultModal();
+                } catch (error) {
+                    // 保存に失敗した場合、URLをクリーンアップ
+                    removeVideoUrl(currentRaceId);
+                    race.raceVideo = null;
+                    alert('動画の保存に失敗しました。');
+                    console.error('動画保存エラー:', error);
+                }
             } else {
                 try {
                     await saveData();
@@ -1689,6 +1794,8 @@
         // レース削除
         async function deleteRace(raceId) {
             if (confirm('このレースを削除しますか？')) {
+                // 動画URLをクリーンアップ
+                removeVideoUrl(raceId);
                 races = races.filter(race => race.id !== raceId);
                 await saveData();
                 renderRaceList();
@@ -1700,11 +1807,18 @@
         document.getElementById('raceVideo').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('videoPreview').innerHTML = `<video controls src="${e.target.result}" style="width: 100%; max-height: 200px; border-radius: 8px;"></video>`;
-                };
-                reader.readAsDataURL(file);
+                // ObjectURLを作成してプレビュー表示
+                const previewUrl = URL.createObjectURL(file);
+                document.getElementById('videoPreview').innerHTML = `<video controls src="${previewUrl}"></video>`;
+                
+                // プレビュー用URLは一時的なので、後でクリーンアップ
+                const existingVideo = document.querySelector('#videoPreview video');
+                if (existingVideo) {
+                    existingVideo.addEventListener('loadeddata', function() {
+                        // 動画が読み込まれた後は不要なのでクリーンアップ
+                        // ただし、まだ表示中なのでここではクリーンアップしない
+                    });
+                }
             }
         });
 
