@@ -1109,16 +1109,18 @@
                 const savedDefaultSettings = await loadDataFromDB('settings', 'defaultSettings');
                 
                 if (savedRaces && savedRaces.length > 0) {
-                    races = savedRaces;
+                    races = savedRaces.map(race => {
+                        // Blobから動画URLを復元
+                        if (race.videoBlob) {
+                            const objectUrl = URL.createObjectURL(race.videoBlob);
+                            videoFiles.set(race.id, race.videoBlob);
+                            videoUrls.set(race.id, objectUrl);
+                            race.raceVideo = objectUrl;
+                            delete race.videoBlob; // メモリ節約のため削除
+                        }
+                        return race;
+                    });
                     races.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                    
-                    // 動画ファイルを持つレースがある場合の警告表示
-                    const videoRaces = races.filter(race => race.hasVideo);
-                    if (videoRaces.length > 0) {
-                        setTimeout(() => {
-                            alert(`${videoRaces.length}件のレース動画は再選択が必要です。動画はセッション期間中のみ保持されます。`);
-                        }, 1000);
-                    }
                 }
                 
                 if (savedEvents && savedEvents.value) {
@@ -1165,11 +1167,14 @@
                     await initDB();
                 }
                 
-                // 動画データを除外したレースデータを作成
+                // 動画データを含むレースデータを作成
                 const racesForSave = races.map(race => {
                     const raceData = { ...race };
-                    // 動画URLは保存せず、フラグのみ保存
-                    if (race.raceVideo) {
+                    // 動画ファイルがある場合はBlobとして保存
+                    if (race.id && videoFiles.has(race.id)) {
+                        raceData.videoBlob = videoFiles.get(race.id);
+                        raceData.hasVideo = true;
+                    } else if (race.raceVideo) {
                         raceData.hasVideo = true;
                         delete raceData.raceVideo;
                     }
@@ -1623,9 +1628,9 @@
                 ? `<div class="detail-photos">${race.photos.map(photo => `<img src="${photo}" alt="マシン写真">`).join('')}</div>`
                 : '';
                 
-            const videoUrl = getVideoUrl(race.id);
+            const videoUrl = race.raceVideo || getVideoUrl(race.id);
             const raceVideo = videoUrl 
-                ? `<div class="form-group"><label>レース動画</label><video controls src="${videoUrl}"></video></div>`
+                ? `<div class="form-group"><label>レース動画</label><div class="video-container"><video controls src="${videoUrl}"></video></div></div>`
                 : race.hasVideo 
                 ? `<div class="form-group"><label>レース動画</label><div class="video-placeholder">動画ファイルを再選択してください</div></div>`
                 : '';
@@ -1714,7 +1719,7 @@
             
             if (race) {
                 document.getElementById('raceTime').value = race.raceTime || '';
-                const videoUrl = getVideoUrl(race.id);
+                const videoUrl = race.raceVideo || getVideoUrl(race.id);
                 if (videoUrl) {
                     document.getElementById('videoPreview').innerHTML = `<video controls src="${videoUrl}"></video>`;
                 } else if (race.hasVideo) {
