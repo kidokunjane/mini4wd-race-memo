@@ -1,0 +1,1986 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ミニ四駆レースメモ</title>
+    <meta name="theme-color" content="#007AFF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ミニ四駆メモ">
+    
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIuODn+ODi+Wbm+mqhuODrOODvOOCueODoeODouOAkSIsCiAgInNob3J0X25hbWUiOiAi44Of44OL5Zub6aqG44Oh44OiIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M00zTXZNakF3TUM5emRtY2lJSFpwWlhkQ2IzZzlJakFnTUNBek1qQWdNekl3SWo0S0lDQThjbVZqZENCNFBTSTRJaUI1UFNJNElpQjNhV1IwYUQwMU1qUWlJR2hsYVdkb2REMDFNalFpSUdacGJHdzlJaU13TURZNU1rWWlMejRLSUR3dmMzWm5QZ3BPZEhWRWNuTTlTbXhoWm1kcGRtZEZhSGxxV21kNVNsZGlRVXg2V1VjNWMzZE1RVE5EUVZCNFdYazFRMnNnIiwKICAgICAgInNpemVzIjogIjMyeDMyIiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICAgIH0sCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M00zTXZNakF3TUM5emRtY2lJSFpwWlhkQ2IzZzlJakFnTUNBMU1USWdOVEV5SWo0S0lDQThjbVZqZENCNFBTSTRJaUI1UFNJNElpQjNhV1IwYUQxMU1EQTBJR2hsYVdkb2REMDFNVEFpSUdacGJHdzlJaU13TURZNU1rWWlMejRLSUR3dmMzWm5QZ3BPZEhWRWNuTTlTbXhoWm1kcGRtZEZhSGxxV21kNVNsZGlRVXg2V1VjNWMzZE1RVE5EUVZCNFdYazFRMnNnIiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0sCiAgInN0YXJ0X3VybCI6ICIvIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmZmZmZmIiwKICAidGhlbWVfY29sb3IiOiAiIzAwN0FGRiIKfQo=">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .header {
+            background: white;
+            color: #333;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 1rem;
+            min-height: calc(100vh - 120px);
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 122, 255, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 122, 255, 0.4);
+            background: #0056CC;
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+
+        .btn-full {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .photo-item {
+            position: relative;
+            aspect-ratio: 1;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-item .remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .race-list {
+            list-style: none;
+        }
+
+        .race-item {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+            position: relative;
+            overflow: hidden;
+            touch-action: pan-y;
+            user-select: none;
+        }
+
+        .race-item:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .race-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #007AFF;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .race-item:hover::before {
+            opacity: 1;
+        }
+
+        .race-item.dragging {
+            transform: scale(1.05) rotate(2deg);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            opacity: 0.9;
+        }
+
+        .race-item.drag-over {
+            border-top: 3px solid #007AFF;
+            margin-top: 2rem;
+        }
+
+        .race-item.swiping {
+            transition: transform 0.1s ease-out;
+        }
+
+        .race-item.swipe-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .race-item .swipe-action {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            background: #dc3545;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .race-item.show-swipe-action .swipe-action {
+            transform: translateX(0);
+        }
+
+        .drag-handle {
+            position: absolute;
+            left: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            opacity: 0.3;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2px;
+        }
+
+        .drag-handle::before,
+        .drag-handle::after {
+            content: '';
+            width: 3px;
+            height: 3px;
+            background: #666;
+            border-radius: 50%;
+            box-shadow: 0 6px 0 #666, 0 12px 0 #666;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .race-item h3 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .race-item .meta {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .race-item .photos {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .race-item .photos img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .nav-buttons {
+            position: fixed;
+            bottom: env(safe-area-inset-bottom, 0);
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 1rem;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 0.5rem;
+            box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.05);
+            z-index: 200;
+        }
+
+        .add-event-btn {
+            position: fixed;
+            bottom: calc(80px + env(safe-area-inset-bottom, 0));
+            right: 1rem;
+            width: 64px;
+            height: 64px;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 122, 255, 0.3);
+            z-index: 50;
+            transition: all 0.3s ease;
+        }
+
+        .add-event-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 8px 30px rgba(0, 122, 255, 0.5);
+            background: #0056CC;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 2rem;
+            border-radius: 12px;
+            max-height: calc(100vh - 4rem);
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 1rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .custom-event-input {
+            display: none;
+            margin-top: 0.5rem;
+        }
+
+        .custom-event-input.show {
+            display: block;
+        }
+
+        .video-container {
+            margin-top: 0.5rem;
+        }
+
+        .video-container video {
+            width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+        }
+
+        .detail-photos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .detail-photos img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .tabs {
+            display: flex;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+            margin-bottom: 1rem;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 1rem;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab.active {
+            color: #007AFF;
+            border-bottom-color: #007AFF;
+            background: rgba(0, 122, 255, 0.08);
+        }
+
+        .tab:hover:not(.active) {
+            background: rgba(0, 122, 255, 0.04);
+            color: #007AFF;
+        }
+
+        .favorite-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+
+        .favorite-btn:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+
+        .favorite-btn.favorited {
+            color: #ff3b30;
+        }
+
+        .favorite-btn.not-favorited {
+            color: #ccc;
+        }
+
+        .race-item {
+            position: relative;
+        }
+
+        /* 順位に応じたスタイル */
+        .race-item.rank-1 {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 193, 7, 0.1) 100%);
+            border: 2px solid #ffd700;
+            box-shadow: 0 8px 32px rgba(255, 215, 0, 0.3);
+        }
+
+        .race-item.rank-1::before {
+            background: linear-gradient(90deg, #ffd700, #ffed4e);
+            opacity: 1;
+        }
+
+        .race-item.rank-1:hover {
+            transform: translateY(-10px) scale(1.03);
+            box-shadow: 0 15px 50px rgba(255, 215, 0, 0.4);
+        }
+
+        .race-item.rank-2 {
+            background: linear-gradient(135deg, rgba(192, 192, 192, 0.15) 0%, rgba(169, 169, 169, 0.1) 100%);
+            border: 2px solid #c0c0c0;
+            box-shadow: 0 6px 25px rgba(192, 192, 192, 0.3);
+        }
+
+        .race-item.rank-2::before {
+            background: linear-gradient(90deg, #c0c0c0, #e8e8e8);
+            opacity: 1;
+        }
+
+        .race-item.rank-3 {
+            background: linear-gradient(135deg, rgba(205, 127, 50, 0.15) 0%, rgba(184, 115, 51, 0.1) 100%);
+            border: 2px solid #cd7f32;
+            box-shadow: 0 6px 25px rgba(205, 127, 50, 0.3);
+        }
+
+        .race-item.rank-3::before {
+            background: linear-gradient(90deg, #cd7f32, #deb887);
+            opacity: 1;
+        }
+
+        .rank-badge {
+            position: absolute;
+            top: -8px;
+            left: 1rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: white;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .rank-badge.rank-1 {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            animation: goldGlow 2s ease-in-out infinite alternate;
+        }
+
+        .rank-badge.rank-2 {
+            background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+        }
+
+        .rank-badge.rank-3 {
+            background: linear-gradient(135deg, #cd7f32 0%, #deb887 100%);
+        }
+
+        .rank-badge.rank-other {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        }
+
+        @keyframes goldGlow {
+            0% {
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 20px rgba(255, 215, 0, 0.3);
+            }
+            100% {
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 30px rgba(255, 215, 0, 0.6);
+            }
+        }
+
+        .race-time-highlight {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #28a745;
+            color: white;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-left: 0.5rem;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ミニ四駆レースメモ</h1>
+    </div>
+
+    <!-- トップ画面 -->
+    <div id="homeScreen" class="screen active">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('all')">全て</button>
+            <button class="tab" onclick="switchTab('favorites')">お気に入り</button>
+        </div>
+        <div class="container">
+            <ul id="raceList" class="race-list">
+                <!-- レースアイテムがここに追加される -->
+            </ul>
+        </div>
+        <button class="add-event-btn" onclick="showNewRaceForm()">+</button>
+    </div>
+
+    <!-- 新規レース登録画面 -->
+    <div id="newRaceScreen" class="screen">
+        <div class="container">
+            <div class="card">
+                <h2>新規レース登録</h2>
+                <form id="newRaceForm">
+                    <div class="form-group">
+                        <label for="eventName">大会名</label>
+                        <input type="text" id="eventName" list="eventHistory" required placeholder="大会名を入力してください">
+                        <datalist id="eventHistory">
+                            <!-- 大会名履歴がここに表示される -->
+                        </datalist>
+                    </div>
+
+                    <div class="form-group">
+                        <label>マシンの写真（最大3枚）</label>
+                        <div class="photo-grid" id="photoGrid">
+                            <div class="photo-item" onclick="selectPhoto(0)">
+                                <span>+</span>
+                            </div>
+                            <div class="photo-item" onclick="selectPhoto(1)">
+                                <span>+</span>
+                            </div>
+                            <div class="photo-item" onclick="selectPhoto(2)">
+                                <span>+</span>
+                            </div>
+                        </div>
+                        <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="handlePhotoSelect(event)">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="voltage">電圧</label>
+                        <input type="number" id="voltage" step="0.1" placeholder="例: 3.0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="checkerSpeed">チェッカー速度</label>
+                        <input type="number" id="checkerSpeed" step="0.01" placeholder="例: 18.50">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tireDiameter">タイヤ径</label>
+                        <input type="number" id="tireDiameter" step="0.1" placeholder="例: 26.0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tireType">タイヤの種類</label>
+                        <select id="tireType">
+                            <option value="">選択してください</option>
+                            <option value="ローフリクション">ローフリクション</option>
+                            <option value="スーパーハード">スーパーハード</option>
+                            <option value="その他">その他</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gearRatio">ギア比</label>
+                        <select id="gearRatio">
+                            <option value="">選択してください</option>
+                            <option value="4.2:1">4.2:1</option>
+                            <option value="4:1">4:1</option>
+                            <option value="3.7:1">3.7:1</option>
+                            <option value="3.5:1">3.5:1</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="brake">ブレーキ</label>
+                        <textarea id="brake" placeholder="ブレーキ設定についてメモ"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="remarks">備考</label>
+                        <textarea id="remarks" placeholder="その他のメモ"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-full">保存</button>
+                    <button type="button" class="btn btn-secondary btn-full" onclick="showHome()">キャンセル</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- レース詳細画面 -->
+    <div id="detailScreen" class="screen">
+        <div class="container">
+            <div class="card" id="detailContent">
+                <!-- 詳細内容がここに表示される -->
+            </div>
+        </div>
+    </div>
+
+    <!-- レース結果追加モーダル -->
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>レース結果を追加</h3>
+                <button class="close-btn" onclick="closeResultModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="raceTime">タイム</label>
+                    <input type="number" id="raceTime" step="0.01" placeholder="例: 18.45">
+                </div>
+
+                <div class="form-group">
+                    <label for="raceRank">順位</label>
+                    <select id="raceRank">
+                        <option value="">選択してください</option>
+                        <option value="1位">1位</option>
+                        <option value="2位">2位</option>
+                        <option value="3位">3位</option>
+                        <option value="4位">4位</option>
+                        <option value="5位">5位</option>
+                        <option value="CO">CO</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="raceVideo">レース動画</label>
+                    <input type="file" id="raceVideo" accept="video/*">
+                    <div class="video-container" id="videoPreview">
+                        <!-- 動画プレビューがここに表示される -->
+                    </div>
+                </div>
+
+                <button class="btn btn-full" onclick="saveRaceResult()">結果を保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- セッティング編集モーダル -->
+    <div id="settingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>セッティングを編集</h3>
+                <button class="close-btn" onclick="closeSettingModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editEventName">大会名</label>
+                    <input type="text" id="editEventName" list="editEventHistory" required placeholder="大会名を入力してください">
+                    <datalist id="editEventHistory">
+                        <!-- 大会名履歴がここに表示される -->
+                    </datalist>
+                </div>
+
+                <div class="form-group">
+                    <label for="editVoltage">電圧</label>
+                    <input type="number" id="editVoltage" step="0.1" placeholder="例: 3.0">
+                </div>
+
+                <div class="form-group">
+                    <label for="editCheckerSpeed">チェッカー速度</label>
+                    <input type="number" id="editCheckerSpeed" step="0.01" placeholder="例: 18.50">
+                </div>
+
+                <div class="form-group">
+                    <label for="editTireDiameter">タイヤ径</label>
+                    <input type="number" id="editTireDiameter" step="0.1" placeholder="例: 26.0">
+                </div>
+
+                <div class="form-group">
+                    <label for="editTireType">タイヤの種類</label>
+                    <select id="editTireType">
+                        <option value="">選択してください</option>
+                        <option value="ローフリクション">ローフリクション</option>
+                        <option value="スーパーハード">スーパーハード</option>
+                        <option value="その他">その他</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="editGearRatio">ギア比</label>
+                    <select id="editGearRatio">
+                        <option value="">選択してください</option>
+                        <option value="4.2:1">4.2:1</option>
+                        <option value="4:1">4:1</option>
+                        <option value="3.7:1">3.7:1</option>
+                        <option value="3.5:1">3.5:1</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="editBrake">ブレーキ</label>
+                    <textarea id="editBrake" placeholder="ブレーキ設定についてメモ"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="editRemarks">備考</label>
+                    <textarea id="editRemarks" placeholder="その他のメモ"></textarea>
+                </div>
+
+                <button class="btn btn-full" onclick="saveSettingChanges()">セッティングを保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-buttons">
+        <button class="btn" onclick="showHome()" style="flex: 1;">ホーム</button>
+    </div>
+
+    <script>
+        let races = [];
+        let events = ['ジャパンカップ', 'ミニ四駆グランプリ', '店舗大会', 'サマーカップ'];
+        let currentPhotos = [];
+        let currentPhotoIndex = 0;
+        let currentRaceId = null;
+        let defaultSettings = {};
+        let currentTab = 'all';
+        let currentEditRaceId = null;
+        let db = null;
+        
+        // ドラッグ&ドロップ関連
+        let draggedElement = null;
+        let draggedRaceId = null;
+        let isDragging = false;
+        
+        // スワイプ関連
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isSwiping = false;
+        let swipeThreshold = 100;
+
+        // IndexedDBの初期化
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('Mini4WDRaceMemoDB', 1);
+                
+                request.onerror = () => {
+                    console.error('IndexedDBのオープンに失敗しました');
+                    reject(request.error);
+                };
+                
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    db = event.target.result;
+                    
+                    if (!db.objectStoreNames.contains('races')) {
+                        const raceStore = db.createObjectStore('races', { keyPath: 'id' });
+                        raceStore.createIndex('createdAt', 'createdAt', { unique: false });
+                        raceStore.createIndex('eventName', 'eventName', { unique: false });
+                        raceStore.createIndex('isFavorite', 'isFavorite', { unique: false });
+                    }
+                    
+                    if (!db.objectStoreNames.contains('settings')) {
+                        db.createObjectStore('settings', { keyPath: 'key' });
+                    }
+                };
+            });
+        }
+
+        async function loadDataFromDB(storeName, key = null) {
+            if (!db) return null;
+            
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([storeName], 'readonly');
+                const store = transaction.objectStore(storeName);
+                
+                let request;
+                if (key) {
+                    request = store.get(key);
+                } else {
+                    request = store.getAll();
+                }
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function saveDataToDB(storeName, data) {
+            if (!db) return;
+            
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([storeName], 'readwrite');
+                const store = transaction.objectStore(storeName);
+                
+                if (Array.isArray(data)) {
+                    const clearRequest = store.clear();
+                    clearRequest.onsuccess = () => {
+                        const promises = data.map(item => {
+                            return new Promise((res, rej) => {
+                                const addRequest = store.add(item);
+                                addRequest.onsuccess = () => res();
+                                addRequest.onerror = () => rej(addRequest.error);
+                            });
+                        });
+                        Promise.all(promises).then(resolve).catch(reject);
+                    };
+                    clearRequest.onerror = () => reject(clearRequest.error);
+                } else {
+                    const putRequest = store.put(data);
+                    putRequest.onsuccess = () => resolve();
+                    putRequest.onerror = () => reject(putRequest.error);
+                }
+            });
+        }
+
+        async function migrateFromLocalStorage() {
+            try {
+                const localRaces = localStorage.getItem('mini4wd_races');
+                const localEvents = localStorage.getItem('mini4wd_events');
+                const localSettings = localStorage.getItem('mini4wd_default_settings');
+                
+                if (localRaces || localEvents || localSettings) {
+                    console.log('localStorageからIndexedDBにデータを移行中...');
+                    
+                    if (localRaces) {
+                        const racesData = JSON.parse(localRaces);
+                        if (racesData.length > 0) {
+                            await saveDataToDB('races', racesData);
+                        }
+                    }
+                    
+                    if (localEvents) {
+                        await saveDataToDB('settings', {
+                            key: 'events',
+                            value: JSON.parse(localEvents)
+                        });
+                    }
+                    
+                    if (localSettings) {
+                        await saveDataToDB('settings', {
+                            key: 'defaultSettings',
+                            value: JSON.parse(localSettings)
+                        });
+                    }
+                    
+                    localStorage.removeItem('mini4wd_races');
+                    localStorage.removeItem('mini4wd_events');
+                    localStorage.removeItem('mini4wd_default_settings');
+                    
+                    console.log('データの移行が完了しました');
+                }
+            } catch (error) {
+                console.error('データ移行エラー:', error);
+            }
+        }
+
+        async function loadData() {
+            try {
+                await initDB();
+                await migrateFromLocalStorage();
+                
+                const savedRaces = await loadDataFromDB('races');
+                const savedEvents = await loadDataFromDB('settings', 'events');
+                const savedDefaultSettings = await loadDataFromDB('settings', 'defaultSettings');
+                
+                if (savedRaces && savedRaces.length > 0) {
+                    races = savedRaces;
+                    races.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                }
+                
+                if (savedEvents && savedEvents.value) {
+                    events = savedEvents.value;
+                }
+                
+                if (savedDefaultSettings && savedDefaultSettings.value) {
+                    defaultSettings = savedDefaultSettings.value;
+                }
+                
+                updateEventHistory();
+                renderRaceList();
+            } catch (error) {
+                console.error('データの読み込みに失敗しました:', error);
+                loadDataFromLocalStorage();
+            }
+        }
+
+        function loadDataFromLocalStorage() {
+            const savedRaces = localStorage.getItem('mini4wd_races');
+            const savedEvents = localStorage.getItem('mini4wd_events');
+            const savedDefaultSettings = localStorage.getItem('mini4wd_default_settings');
+            
+            if (savedRaces) {
+                races = JSON.parse(savedRaces);
+            }
+            
+            if (savedEvents) {
+                events = JSON.parse(savedEvents);
+            }
+            
+            if (savedDefaultSettings) {
+                defaultSettings = JSON.parse(savedDefaultSettings);
+            }
+            
+            updateEventHistory();
+            renderRaceList();
+        }
+
+        // データをIndexedDBに保存
+        async function saveData() {
+            try {
+                if (!db) {
+                    await initDB();
+                }
+                
+                await saveDataToDB('races', races);
+                await saveDataToDB('settings', {
+                    key: 'events',
+                    value: events
+                });
+            } catch (error) {
+                console.error('IndexedDB保存エラー:', error);
+                try {
+                    localStorage.setItem('mini4wd_races', JSON.stringify(races));
+                    localStorage.setItem('mini4wd_events', JSON.stringify(events));
+                } catch (lsError) {
+                    if (lsError.name === 'QuotaExceededError') {
+                        alert('ストレージ容量が不足しています。');
+                    } else {
+                        alert('データの保存に失敗しました。');
+                    }
+                    throw lsError;
+                }
+            }
+        }
+
+        // デフォルト設定を保存
+        async function saveDefaultSettings() {
+            try {
+                if (!db) {
+                    await initDB();
+                }
+                
+                await saveDataToDB('settings', {
+                    key: 'defaultSettings',
+                    value: defaultSettings
+                });
+            } catch (error) {
+                console.warn('デフォルト設定のIndexedDB保存に失敗:', error);
+                try {
+                    localStorage.setItem('mini4wd_default_settings', JSON.stringify(defaultSettings));
+                } catch (lsError) {
+                    console.warn('デフォルト設定のlocalStorage保存にも失敗:', lsError);
+                }
+            }
+        }
+
+        // 大会名履歴の更新
+        function updateEventHistory() {
+            const datalist = document.getElementById('eventHistory');
+            const editDatalist = document.getElementById('editEventHistory');
+            
+            datalist.innerHTML = '';
+            if (editDatalist) {
+                editDatalist.innerHTML = '';
+            }
+            
+            events.forEach(event => {
+                const option = document.createElement('option');
+                option.value = event;
+                datalist.appendChild(option);
+                
+                if (editDatalist) {
+                    const editOption = document.createElement('option');
+                    editOption.value = event;
+                    editDatalist.appendChild(editOption);
+                }
+            });
+        }
+
+        // 大会名を履歴に追加
+        async function addEventToHistory(eventName) {
+            if (eventName && !events.includes(eventName)) {
+                events.push(eventName);
+                updateEventHistory();
+                try {
+                    await saveData();
+                } catch (error) {
+                    console.error('履歴保存エラー:', error);
+                }
+            }
+        }
+
+        // 写真選択
+        function selectPhoto(index) {
+            currentPhotoIndex = index;
+            document.getElementById('photoInput').click();
+        }
+
+        // 画像を圧縮する関数
+        function compressImage(file, maxWidth = 300, quality = 0.3) {
+            return new Promise((resolve, reject) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                    // より小さなサイズにリサイズ
+                    let { width, height } = img;
+                    
+                    // 長辺を基準にリサイズ
+                    const maxDimension = maxWidth;
+                    if (width > height) {
+                        if (width > maxDimension) {
+                            height = (height * maxDimension) / width;
+                            width = maxDimension;
+                        }
+                    } else {
+                        if (height > maxDimension) {
+                            width = (width * maxDimension) / height;
+                            height = maxDimension;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // 高品質な描画設定
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // 強い圧縮
+                    let compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                    
+                    // 圧縮後のサイズをチェックして、大きすぎる場合はさらに圧縮
+                    const compressedSize = compressedDataUrl.length * 0.75; // Base64は約25%増加
+                    if (compressedSize > 50 * 1024) { // 50KB制限
+                        compressedDataUrl = canvas.toDataURL('image/jpeg', 0.1);
+                    }
+                    
+                    resolve(compressedDataUrl);
+                };
+                
+                img.onerror = function() {
+                    reject(new Error('画像の読み込みに失敗しました'));
+                };
+                
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        // 写真選択の処理
+        async function handlePhotoSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                try {
+                    // ファイル形式をチェック
+                    if (!file.type.startsWith('image/')) {
+                        alert('画像ファイルを選択してください。');
+                        return;
+                    }
+                    
+                    // 元ファイルサイズをチェック
+                    const maxSize = 10 * 1024 * 1024; // 10MB
+                    if (file.size > maxSize) {
+                        alert('画像サイズが大きすぎます。10MB以下の画像を選択してください。');
+                        return;
+                    }
+                    
+                    // 画像を圧縮
+                    const compressedImage = await compressImage(file);
+                    
+                    // 圧縮後のサイズをログ出力
+                    const compressedSize = compressedImage.length * 0.75;
+                    console.log(`圧縮後サイズ: ${(compressedSize / 1024).toFixed(1)}KB`);
+                    
+                    currentPhotos[currentPhotoIndex] = compressedImage;
+                    updatePhotoGrid();
+                } catch (error) {
+                    alert('画像の処理に失敗しました: ' + error.message);
+                    console.error('画像処理エラー:', error);
+                }
+            }
+        }
+
+        // 写真グリッドの更新
+        function updatePhotoGrid() {
+            const photoGrid = document.getElementById('photoGrid');
+            photoGrid.innerHTML = '';
+            
+            for (let i = 0; i < 3; i++) {
+                const photoItem = document.createElement('div');
+                photoItem.className = 'photo-item';
+                photoItem.onclick = () => selectPhoto(i);
+                
+                if (currentPhotos[i]) {
+                    const img = document.createElement('img');
+                    img.src = currentPhotos[i];
+                    photoItem.appendChild(img);
+                    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'remove-btn';
+                    removeBtn.innerHTML = '&times;';
+                    removeBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        removePhoto(i);
+                    };
+                    photoItem.appendChild(removeBtn);
+                } else {
+                    photoItem.innerHTML = '<span>+</span>';
+                }
+                
+                photoGrid.appendChild(photoItem);
+            }
+        }
+
+        // 写真削除
+        function removePhoto(index) {
+            currentPhotos[index] = null;
+            updatePhotoGrid();
+        }
+
+        // 新規レースフォーム表示
+        function showNewRaceForm() {
+            currentPhotos = [];
+            document.getElementById('newRaceForm').reset();
+            updatePhotoGrid();
+            
+            // デフォルト値を設定
+            if (defaultSettings.eventName) {
+                document.getElementById('eventName').value = defaultSettings.eventName;
+            }
+            if (defaultSettings.voltage) {
+                document.getElementById('voltage').value = defaultSettings.voltage;
+            }
+            if (defaultSettings.checkerSpeed) {
+                document.getElementById('checkerSpeed').value = defaultSettings.checkerSpeed;
+            }
+            if (defaultSettings.tireDiameter) {
+                document.getElementById('tireDiameter').value = defaultSettings.tireDiameter;
+            }
+            if (defaultSettings.tireType) {
+                document.getElementById('tireType').value = defaultSettings.tireType;
+            }
+            if (defaultSettings.gearRatio) {
+                document.getElementById('gearRatio').value = defaultSettings.gearRatio;
+            }
+            if (defaultSettings.brake) {
+                document.getElementById('brake').value = defaultSettings.brake;
+            }
+            if (defaultSettings.remarks) {
+                document.getElementById('remarks').value = defaultSettings.remarks;
+            }
+            
+            showScreen('newRaceScreen');
+        }
+
+        // 画面切り替え
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // ホーム画面表示
+        function showHome() {
+            showScreen('homeScreen');
+        }
+
+        // 新規レース保存
+        document.getElementById('newRaceForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const eventName = document.getElementById('eventName').value.trim();
+            const voltage = document.getElementById('voltage').value;
+            const checkerSpeed = document.getElementById('checkerSpeed').value;
+            const tireDiameter = document.getElementById('tireDiameter').value;
+            const tireType = document.getElementById('tireType').value;
+            const gearRatio = document.getElementById('gearRatio').value;
+            const brake = document.getElementById('brake').value;
+            const remarks = document.getElementById('remarks').value;
+            
+            if (!eventName) {
+                alert('大会名を入力してください');
+                return;
+            }
+            
+            // 大会名を履歴に追加
+            await addEventToHistory(eventName);
+            
+            // デフォルト設定を更新
+            defaultSettings = {
+                eventName,
+                voltage,
+                checkerSpeed,
+                tireDiameter,
+                tireType,
+                gearRatio,
+                brake,
+                remarks
+            };
+            await saveDefaultSettings();
+            
+            const newRace = {
+                id: Date.now().toString(),
+                eventName,
+                voltage,
+                checkerSpeed,
+                tireDiameter,
+                tireType,
+                gearRatio,
+                brake,
+                remarks,
+                photos: currentPhotos.filter(photo => photo !== null),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                raceTime: null,
+                raceVideo: null,
+                raceRank: null,
+                isFavorite: false
+            };
+            
+            races.unshift(newRace);
+            
+            try {
+                await saveData();
+                renderRaceList();
+                showHome();
+            } catch (error) {
+                races.shift(); // 保存失敗時は追加したレースを削除
+                alert('データの保存に失敗しました。');
+                console.error('保存エラー:', error);
+            }
+        });
+
+        // レースリストの描画
+        function renderRaceList() {
+            const raceList = document.getElementById('raceList');
+            raceList.innerHTML = '';
+            
+            // フィルタリング
+            let filteredRaces = races;
+            if (currentTab === 'favorites') {
+                filteredRaces = races.filter(race => race.isFavorite);
+            }
+            
+            if (filteredRaces.length === 0) {
+                const message = currentTab === 'favorites' 
+                    ? 'お気に入りのレースがありません<br>ハートマークをタップしてお気に入りに追加してください'
+                    : 'まだレースがありません<br>+ボタンから追加してください';
+                raceList.innerHTML = `<li style="text-align: center; color: #666; padding: 2rem;">${message}</li>`;
+                return;
+            }
+            
+            filteredRaces.forEach(race => {
+                const raceItem = document.createElement('li');
+                let raceItemClass = 'race-item';
+                
+                // 順位に応じたクラスを追加
+                if (race.raceRank === '1位') {
+                    raceItemClass += ' rank-1';
+                } else if (race.raceRank === '2位') {
+                    raceItemClass += ' rank-2';
+                } else if (race.raceRank === '3位') {
+                    raceItemClass += ' rank-3';
+                }
+                
+                raceItem.className = raceItemClass;
+                raceItem.dataset.raceId = race.id;
+                raceItem.onclick = (e) => {
+                    if (!isSwiping && !isDragging) {
+                        showRaceDetail(race.id);
+                    }
+                };
+                
+                // スワイプイベントリスナーを追加
+                addSwipeListeners(raceItem, race.id);
+                
+                const photos = race.photos.length > 0 
+                    ? `<div class="photos">${race.photos.slice(0, 3).map(photo => `<img src="${photo}" alt="マシン写真">`).join('')}</div>`
+                    : '';
+                
+                const raceTimeInfo = race.raceTime ? `<br><span class="race-time-highlight">タイム: ${race.raceTime}秒</span>` : '';
+                const raceRankInfo = race.raceRank ? ` | 順位: ${race.raceRank}` : '';
+                const updatedInfo = race.updatedAt && race.updatedAt !== race.createdAt ? ` | 更新: ${formatDateTime(race.updatedAt)}` : '';
+                
+                // 順位バッジの生成
+                let rankBadge = '';
+                if (race.raceRank) {
+                    let badgeClass = 'rank-other';
+                    let badgeText = race.raceRank;
+                    
+                    if (race.raceRank === '1位') {
+                        badgeClass = 'rank-1';
+                        badgeText = '🏆';
+                    } else if (race.raceRank === '2位') {
+                        badgeClass = 'rank-2';
+                        badgeText = '🥈';
+                    } else if (race.raceRank === '3位') {
+                        badgeClass = 'rank-3';
+                        badgeText = '🥉';
+                    } else if (race.raceRank === 'CO') {
+                        badgeClass = 'rank-other';
+                        badgeText = 'CO';
+                    } else {
+                        badgeText = race.raceRank.replace('位', '');
+                    }
+                    
+                    rankBadge = `<div class="rank-badge ${badgeClass}">${badgeText}</div>`;
+                }
+                
+                raceItem.innerHTML = `
+                    <div class="drag-handle" onmousedown="startDrag(event, '${race.id}')" ontouchstart="startDrag(event, '${race.id}')"></div>
+                    <div class="swipe-action" onclick="deleteRace('${race.id}')">🗑️</div>
+                    ${rankBadge}
+                    <button class="favorite-btn ${race.isFavorite ? 'favorited' : 'not-favorited'}" onclick="toggleFavorite('${race.id}', event)">
+                        ${race.isFavorite ? '❤️' : '🤍'}
+                    </button>
+                    <div style="margin-left: 2rem;">
+                        <h3>${race.eventName}</h3>
+                        <div class="meta">
+                            ${race.voltage ? `電圧: ${race.voltage}V` : ''}
+                            ${race.checkerSpeed ? ` | チェッカー: ${race.checkerSpeed}` : ''}
+                            ${raceTimeInfo}${raceRankInfo}
+                            <br>作成: ${formatDateTime(race.createdAt)}${updatedInfo}
+                        </div>
+                        ${photos}
+                    </div>
+                `;
+                
+                raceList.appendChild(raceItem);
+            });
+        }
+
+        // レース詳細表示
+        function showRaceDetail(raceId) {
+            const race = races.find(r => r.id === raceId);
+            if (!race) return;
+            
+            const detailContent = document.getElementById('detailContent');
+            
+            const photos = race.photos.length > 0 
+                ? `<div class="detail-photos">${race.photos.map(photo => `<img src="${photo}" alt="マシン写真">`).join('')}</div>`
+                : '';
+                
+            const raceVideo = race.raceVideo 
+                ? `<div class="form-group"><label>レース動画</label><video controls src="${race.raceVideo}"></video></div>`
+                : '';
+            
+            detailContent.innerHTML = `
+                <h2>${race.eventName}</h2>
+                <div class="meta" style="margin-bottom: 1rem; color: #666;">
+                    作成: ${formatDateTime(race.createdAt)}<br>
+                    ${race.updatedAt && race.updatedAt !== race.createdAt ? `更新: ${formatDateTime(race.updatedAt)}` : ''}
+                </div>
+                
+                ${photos}
+                
+                <div class="form-group">
+                    <label>電圧</label>
+                    <p>${race.voltage || '未設定'}</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>チェッカー速度</label>
+                    <p>${race.checkerSpeed || '未設定'}</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>タイヤ径</label>
+                    <p>${race.tireDiameter || '未設定'}</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>タイヤの種類</label>
+                    <p>${race.tireType || '未設定'}</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>ギア比</label>
+                    <p>${race.gearRatio || '未設定'}</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>ブレーキ</label>
+                    <p>${race.brake || '未設定'}</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>備考</label>
+                    <p>${race.remarks || '未設定'}</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>レースタイム</label>
+                    <p>${race.raceTime ? race.raceTime + '秒' : '未設定'}</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>順位</label>
+                    <p style="${race.raceRank === '1位' ? 'color: #ffd700; font-weight: bold; font-size: 1.2em;' : race.raceRank === '2位' ? 'color: #c0c0c0; font-weight: bold;' : race.raceRank === '3位' ? 'color: #cd7f32; font-weight: bold;' : ''}">
+                        ${race.raceRank ? (race.raceRank === '1位' ? '🏆 ' + race.raceRank : race.raceRank === '2位' ? '🥈 ' + race.raceRank : race.raceRank === '3位' ? '🥉 ' + race.raceRank : race.raceRank) : '未設定'}
+                    </p>
+                </div>
+                
+                ${raceVideo}
+                
+                <button class="btn ${race.isFavorite ? 'btn-danger' : 'btn-secondary'} btn-full" onclick="toggleFavorite('${race.id}')">
+                    ${race.isFavorite ? 'お気に入りから削除' : 'お気に入りに追加'}
+                </button>
+                <button class="btn btn-secondary btn-full" onclick="showSettingModal('${race.id}')">セッティングを編集</button>
+                <button class="btn btn-success btn-full" onclick="showResultModal('${race.id}')">
+                    ${race.raceTime ? 'レース結果を更新' : 'レース結果を追加'}
+                </button>
+                <button class="btn btn-danger btn-full" onclick="deleteRace('${race.id}')">削除</button>
+                <button class="btn btn-secondary btn-full" onclick="showHome()">戻る</button>
+            `;
+            
+            showScreen('detailScreen');
+        }
+
+        // レース結果追加モーダル表示
+        function showResultModal(raceId) {
+            currentRaceId = raceId;
+            const race = races.find(r => r.id === raceId);
+            
+            if (race) {
+                document.getElementById('raceTime').value = race.raceTime || '';
+                if (race.raceVideo) {
+                    document.getElementById('videoPreview').innerHTML = `<video controls src="${race.raceVideo}" style="width: 100%; max-height: 200px; border-radius: 8px;"></video>`;
+                } else {
+                    document.getElementById('videoPreview').innerHTML = '';
+                }
+            }
+            
+            document.getElementById('resultModal').style.display = 'block';
+        }
+
+        // レース結果追加モーダルを閉じる
+        function closeResultModal() {
+            document.getElementById('resultModal').style.display = 'none';
+            document.getElementById('raceVideo').value = '';
+            document.getElementById('videoPreview').innerHTML = '';
+            currentRaceId = null;
+        }
+
+        // レース結果保存
+        async function saveRaceResult() {
+            if (!currentRaceId) return;
+            
+            const raceTime = document.getElementById('raceTime').value;
+            const raceRank = document.getElementById('raceRank').value;
+            const videoFile = document.getElementById('raceVideo').files[0];
+            
+            const race = races.find(r => r.id === currentRaceId);
+            if (!race) return;
+            
+            race.raceTime = raceTime;
+            race.raceRank = raceRank;
+            race.updatedAt = new Date().toISOString();
+            
+            if (videoFile) {
+                // 動画サイズをチェック
+                const maxSize = 10 * 1024 * 1024; // 10MB
+                if (videoFile.size > maxSize) {
+                    alert('動画サイズが大きすぎます。10MB以下の動画を選択してください。');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const originalVideo = race.raceVideo;
+                    race.raceVideo = e.target.result;
+                    
+                    try {
+                        await saveData();
+                        renderRaceList();
+                        showRaceDetail(currentRaceId);
+                        closeResultModal();
+                    } catch (error) {
+                        // 保存に失敗した場合、元に戻す
+                        race.raceVideo = originalVideo;
+                        alert('動画の保存に失敗しました。');
+                        console.error('動画保存エラー:', error);
+                    }
+                };
+                reader.readAsDataURL(videoFile);
+            } else {
+                try {
+                    await saveData();
+                    renderRaceList();
+                    showRaceDetail(currentRaceId);
+                    closeResultModal();
+                } catch (error) {
+                    if (error.name === 'QuotaExceededError') {
+                        alert('容量不足のため保存できませんでした。');
+                    }
+                }
+            }
+        }
+
+        // レース削除
+        async function deleteRace(raceId) {
+            if (confirm('このレースを削除しますか？')) {
+                races = races.filter(race => race.id !== raceId);
+                await saveData();
+                renderRaceList();
+                showHome();
+            }
+        }
+
+        // 動画選択の処理
+        document.getElementById('raceVideo').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('videoPreview').innerHTML = `<video controls src="${e.target.result}" style="width: 100%; max-height: 200px; border-radius: 8px;"></video>`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // モーダルの外側をクリックしたら閉じる
+        document.getElementById('resultModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeResultModal();
+            }
+        });
+
+        // セッティング編集モーダル表示
+        function showSettingModal(raceId) {
+            currentEditRaceId = raceId;
+            const race = races.find(r => r.id === raceId);
+            
+            if (race) {
+                // 大会選択を更新
+                updateEditEventSelect();
+                
+                // 現在の値を設定
+                document.getElementById('editEventName').value = race.eventName || '';
+                document.getElementById('editVoltage').value = race.voltage || '';
+                document.getElementById('editCheckerSpeed').value = race.checkerSpeed || '';
+                document.getElementById('editTireDiameter').value = race.tireDiameter || '';
+                document.getElementById('editTireType').value = race.tireType || '';
+                document.getElementById('editGearRatio').value = race.gearRatio || '';
+                document.getElementById('editBrake').value = race.brake || '';
+                document.getElementById('editRemarks').value = race.remarks || '';
+            }
+            
+            document.getElementById('settingModal').style.display = 'block';
+        }
+
+        // セッティング編集モーダルを閉じる
+        function closeSettingModal() {
+            document.getElementById('settingModal').style.display = 'none';
+            currentEditRaceId = null;
+        }
+
+
+        // セッティング変更を保存
+        async function saveSettingChanges() {
+            if (!currentEditRaceId) return;
+            
+            const race = races.find(r => r.id === currentEditRaceId);
+            if (!race) return;
+            
+            const eventName = document.getElementById('editEventName').value.trim();
+            const voltage = document.getElementById('editVoltage').value;
+            const checkerSpeed = document.getElementById('editCheckerSpeed').value;
+            const tireDiameter = document.getElementById('editTireDiameter').value;
+            const tireType = document.getElementById('editTireType').value;
+            const gearRatio = document.getElementById('editGearRatio').value;
+            const brake = document.getElementById('editBrake').value;
+            const remarks = document.getElementById('editRemarks').value;
+            
+            if (!eventName) {
+                alert('大会名を入力してください');
+                return;
+            }
+            
+            // 大会名を履歴に追加
+            await addEventToHistory(eventName);
+            
+            // レースデータを更新
+            race.eventName = eventName;
+            race.voltage = voltage;
+            race.checkerSpeed = checkerSpeed;
+            race.tireDiameter = tireDiameter;
+            race.tireType = tireType;
+            race.gearRatio = gearRatio;
+            race.brake = brake;
+            race.remarks = remarks;
+            race.updatedAt = new Date().toISOString();
+            
+            // デフォルト設定も更新
+            defaultSettings = {
+                eventName,
+                voltage,
+                checkerSpeed,
+                tireDiameter,
+                tireType,
+                gearRatio,
+                brake,
+                remarks
+            };
+            await saveDefaultSettings();
+            
+            await saveData();
+            renderRaceList();
+            showRaceDetail(currentEditRaceId);
+            closeSettingModal();
+        }
+
+        // セッティング編集モーダルの外側をクリックしたら閉じる
+        document.getElementById('settingModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSettingModal();
+            }
+        });
+
+        // Service Worker登録
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdpbnN0YWxsJywgZnVuY3Rpb24oZXZlbnQpIHsKICAgIGNvbnNvbGUubG9nKCdTZXJ2aWNlIFdvcmtlciBpbnN0YWxsZWQnKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoJ2FjdGl2YXRlJywgZnVuY3Rpb24oZXZlbnQpIHsKICAgIGNvbnNvbGUubG9nKCdTZXJ2aWNlIFdvcmtlciBhY3RpdmF0ZWQnKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoJ2ZldGNoJywgZnVuY3Rpb24oZXZlbnQpIHsKICAgIC8vIEZvciBub3csIGp1c3QgcGFzcyB0aHJvdWdoIGFsbCByZXF1ZXN0cwogICAgZXZlbnQucmVzcG9uZFdpdGgoZmV0Y2goZXZlbnQucmVxdWVzdCkpOwp9KTs=')
+                .then(function(registration) {
+                    console.log('Service Worker registered successfully');
+                })
+                .catch(function(error) {
+                    console.log('Service Worker registration failed');
+                });
+            });
+        }
+
+        // タブ切り替え
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // タブのアクティブ状態を更新
+            document.querySelectorAll('.tab').forEach(tabElement => {
+                tabElement.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // リストを再描画
+            renderRaceList();
+        }
+
+        // お気に入り切り替え
+        async function toggleFavorite(raceId, event) {
+            if (event) {
+                event.stopPropagation(); // リスト項目のクリックを防ぐ
+            }
+            
+            const race = races.find(r => r.id === raceId);
+            if (race) {
+                race.isFavorite = !race.isFavorite;
+                race.updatedAt = new Date().toISOString();
+                await saveData();
+                renderRaceList();
+                
+                // 詳細画面が開いている場合は更新
+                if (currentRaceId === raceId && document.getElementById('detailScreen').classList.contains('active')) {
+                    showRaceDetail(raceId);
+                }
+            }
+        }
+
+        // 日時フォーマット関数
+        function formatDateTime(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString('ja-JP', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        // ドラッグ開始
+        function startDrag(event, raceId) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            draggedRaceId = raceId;
+            draggedElement = event.target.closest('.race-item');
+            isDragging = true;
+            
+            draggedElement.classList.add('dragging');
+            
+            const moveHandler = (e) => {
+                if (!isDragging) return;
+                
+                const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                if (!clientY) return;
+                
+                // ドラッグ中の要素の位置を更新
+                draggedElement.style.position = 'fixed';
+                draggedElement.style.left = '1rem';
+                draggedElement.style.right = '1rem';
+                draggedElement.style.top = (clientY - 50) + 'px';
+                draggedElement.style.zIndex = '1000';
+                
+                // ドロップターゲットを探す
+                const raceItems = document.querySelectorAll('.race-item:not(.dragging)');
+                raceItems.forEach(item => {
+                    item.classList.remove('drag-over');
+                    const rect = item.getBoundingClientRect();
+                    if (clientY > rect.top && clientY < rect.bottom) {
+                        item.classList.add('drag-over');
+                    }
+                });
+            };
+            
+            const endHandler = (e) => {
+                if (!isDragging) return;
+                
+                isDragging = false;
+                draggedElement.classList.remove('dragging');
+                draggedElement.style.position = '';
+                draggedElement.style.left = '';
+                draggedElement.style.right = '';
+                draggedElement.style.top = '';
+                draggedElement.style.zIndex = '';
+                
+                // ドロップターゲットを見つける
+                const dropTarget = document.querySelector('.race-item.drag-over');
+                if (dropTarget && dropTarget.dataset.raceId !== draggedRaceId) {
+                    reorderRaces(draggedRaceId, dropTarget.dataset.raceId);
+                }
+                
+                // すべてのドラッグ関連クラスを削除
+                document.querySelectorAll('.race-item').forEach(item => {
+                    item.classList.remove('drag-over');
+                });
+                
+                draggedElement = null;
+                draggedRaceId = null;
+                
+                document.removeEventListener('mousemove', moveHandler);
+                document.removeEventListener('mouseup', endHandler);
+                document.removeEventListener('touchmove', moveHandler);
+                document.removeEventListener('touchend', endHandler);
+            };
+            
+            document.addEventListener('mousemove', moveHandler);
+            document.addEventListener('mouseup', endHandler);
+            document.addEventListener('touchmove', moveHandler);
+            document.addEventListener('touchend', endHandler);
+        }
+
+        // レースの並び順を変更
+        async function reorderRaces(draggedId, targetId) {
+            const draggedIndex = races.findIndex(r => r.id === draggedId);
+            const targetIndex = races.findIndex(r => r.id === targetId);
+            
+            if (draggedIndex === -1 || targetIndex === -1) return;
+            
+            // 配列の要素を移動
+            const draggedRace = races.splice(draggedIndex, 1)[0];
+            races.splice(targetIndex, 0, draggedRace);
+            
+            try {
+                await saveData();
+                renderRaceList();
+            } catch (error) {
+                console.error('並び順保存エラー:', error);
+                // エラー時は元に戻す
+                loadData();
+            }
+        }
+
+        // スワイプイベントリスナーを追加
+        function addSwipeListeners(element, raceId) {
+            let startX = 0;
+            let startY = 0;
+            let currentX = 0;
+            let isSwipeActive = false;
+            
+            const touchStartHandler = (e) => {
+                const touch = e.touches[0];
+                startX = touch.clientX;
+                startY = touch.clientY;
+                currentX = startX;
+                isSwipeActive = false;
+                isSwiping = false;
+                
+                element.classList.add('swiping');
+            };
+            
+            const touchMoveHandler = (e) => {
+                if (!startX) return;
+                
+                const touch = e.touches[0];
+                currentX = touch.clientX;
+                const deltaX = currentX - startX;
+                const deltaY = Math.abs(touch.clientY - startY);
+                
+                // 垂直スクロールの場合は無視
+                if (deltaY > 30 && !isSwipeActive) {
+                    return;
+                }
+                
+                // 左スワイプの検出
+                if (deltaX < -30) {
+                    e.preventDefault();
+                    isSwipeActive = true;
+                    isSwiping = true;
+                    
+                    const swipeDistance = Math.min(Math.abs(deltaX), 100);
+                    element.style.transform = `translateX(-${swipeDistance}px)`;
+                    
+                    if (swipeDistance > swipeThreshold * 0.6) {
+                        element.classList.add('swipe-delete');
+                        element.classList.add('show-swipe-action');
+                    } else {
+                        element.classList.remove('swipe-delete');
+                        element.classList.remove('show-swipe-action');
+                    }
+                }
+            };
+            
+            const touchEndHandler = (e) => {
+                if (!startX) return;
+                
+                const deltaX = currentX - startX;
+                element.classList.remove('swiping');
+                
+                if (isSwipeActive && deltaX < -swipeThreshold) {
+                    // 削除実行
+                    if (confirm('このレースを削除しますか？')) {
+                        deleteRace(raceId);
+                    }
+                }
+                
+                // リセット
+                element.style.transform = '';
+                element.classList.remove('swipe-delete');
+                element.classList.remove('show-swipe-action');
+                startX = 0;
+                startY = 0;
+                currentX = 0;
+                isSwipeActive = false;
+                
+                setTimeout(() => {
+                    isSwiping = false;
+                }, 100);
+            };
+            
+            element.addEventListener('touchstart', touchStartHandler, { passive: false });
+            element.addEventListener('touchmove', touchMoveHandler, { passive: false });
+            element.addEventListener('touchend', touchEndHandler, { passive: false });
+        }
+
+        // アプリ初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+        });
+    </script>
+</body>
+</html>
