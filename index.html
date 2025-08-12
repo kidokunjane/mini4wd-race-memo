@@ -6,10 +6,19 @@
     <title>ミニ四駆レースメモ</title>
     <meta name="theme-color" content="#007AFF">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="ミニ四駆のレース結果やセッティングを記録できるPWAアプリ">
+    <meta name="msapplication-navbutton-color" content="#007AFF">
+    <meta name="msapplication-TileColor" content="#007AFF">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="四駆メモ">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiByeD0iMjQiIGZpbGw9IiMwMDdBRkYiLz4KPHN2ZyB4PSI0NSIgeT0iNDUiIHdpZHRoPSI5MCIgaGVpZ2h0PSI5MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIj4KPHN0eWxlPi5yYWNlY2FyIHsgZmlsbDogd2hpdGU7IHN0cm9rZTogd2hpdGU7IHN0cm9rZS13aWR0aDogMi41OyBzdHJva2UtbGluZWNhcDogcm91bmQ7IHN0cm9rZS1saW5lam9pbjogcm91bmQ7IH08L3N0eWxlPgo8cGF0aCBkPSJNMiAxMkgyMk0xMiAyVjIyTTEyIDhDMTQuMjA5MSA4IDE2IDEwLjIwOTEgMTYgMTJDMTYgMTMuNzkwOSAxNC4yMDkxIDE2IDEyIDE2QzkuNzkwODYgMTYgOCAxMy43OTA5IDggMTJDOCAxMC4yMDkxIDkuNzkwODYgOCAxMiA4WiIgY2xhc3M9InJhY2VjYXIiLz4KPHJlY3QgeD0iNiIgeT0iMTQiIHdpZHRoPSI0IiBoZWlnaHQ9IjYiIHJ4PSIyIiBjbGFzcz0icmFjZWNhciIvPgo8cmVjdCB4PSIxNCIgeT0iMTQiIHdpZHRoPSI0IiBoZWlnaHQ9IjYiIHJ4PSIyIiBjbGFzcz0icmFjZWNhciIvPgo8cmVjdCB4PSI4IiB5PSI0IiB3aWR0aD0iOCIgaGVpZ2h0PSIzIiByeD0iMS41IiBjbGFzcz0icmFjZWNhciIvPgo8L3N2Zz4KPC9zdmc+">
     <meta name="apple-mobile-web-app-title" content="ミニ四駆メモ">
     
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIuODn+ODi+Wbm+mqhuODrOODvOOCueODoeODouOAkSIsCiAgInNob3J0X25hbWUiOiAi44Of44OL5Zub6aqG44Oh44OiIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M00zTXZNakF3TUM5emRtY2lJSFpwWlhkQ2IzZzlJakFnTUNBek1qQWdNekl3SWo0S0lDQThjbVZqZENCNFBTSTRJaUI1UFNJNElpQjNhV1IwYUQwMU1qUWlJR2hsYVdkb2REMDFNalFpSUdacGJHdzlJaU13TURZNU1rWWlMejRLSUR3dmMzWm5QZ3BPZEhWRWNuTTlTbXhoWm1kcGRtZEZhSGxxV21kNVNsZGlRVXg2V1VjNWMzZE1RVE5EUVZCNFdYazFRMnNnIiwKICAgICAgInNpemVzIjogIjMyeDMyIiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICAgIH0sCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M00zTXZNakF3TUM5emRtY2lJSFpwWlhkQ2IzZzlJakFnTUNBMU1USWdOVEV5SWo0S0lDQThjbVZqZENCNFBTSTRJaUI1UFNJNElpQjNhV1IwYUQxMU1EQTBJR2hsYVdkb2REMDFNVEFpSUdacGJHdzlJaU13TURZNU1rWWlMejRLSUR3dmMzWm5QZ3BPZEhWRWNuTTlTbXhoWm1kcGRtZEZhSGxxV21kNVNsZGlRVXg2V1VjNWMzZE1RVE5EUVZCNFdYazFRMnNnIiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0sCiAgInN0YXJ0X3VybCI6ICIvIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmZmZmZmIiwKICAidGhlbWVfY29sb3IiOiAiIzAwN0FGRiIKfQo=">
+    <!-- PWA マニフェスト -->
+    <link rel="manifest" href="./manifest.json">
+    <!-- 削除予定: <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIuODn+ODi+Wbm+mqhuODrOODvOOCueODoeODouOAkSIsCiAgInNob3J0X25hbWUiOiAi44Of44OL5Zub6aqG44Oh44OiIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M00zTXZNakF3TUM5emRtY2lJSFpwWlhkQ2IzZzlJakFnTUNBek1qQWdNekl3SWo0S0lDQThjbVZqZENCNFBTSTRJaUI1UFNJNElpQjNhV1IwYUQwMU1qUWlJR2hsYVdkb2REMDFNalFpSUdacGJHdzlJaU13TURZNU1rWWlMejRLSUR3dmMzWm5QZ3BPZEhWRWNuTTlTbXhoWm1kcGRtZEZhSGxxV21kNVNsZGlRVXg2V1VjNWMzZE1RVE5EUVZCNFdYazFRMnNnIiwKICAgICAgInNpemVzIjogIjMyeDMyIiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICAgIH0sCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M00zTXZNakF3TUM5emRtY2lJSFpwWlhkQ2IzZzlJakFnTUNBMU1USWdOVEV5SWo0S0lDQThjbVZqZENCNFBTSTRJaUI1UFNJNElpQjNhV1IwYUQxMU1EQTBJR2hsYVdkb2REMDFNVEFpSUdacGJHdzlJaU13TURZNU1rWWlMejRLSUR3dmMzWm5QZ3BPZEhWRWNuTTlTbXhoWm1kcGRtZEZhSGxxV21kNVNsZGlRVXg2V1VjNWMzZE1RVE5EUVZCNFdYazFRMnNnIiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIgogICAgfQogIF0sCiAgInN0YXJ0X3VybCI6ICIvIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmZmZmZmIiwKICAidGhlbWVfY29sb3IiOiAiIzAwN0FGRiIKfQo=">
     
     <style>
         * {
@@ -706,6 +715,18 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="motor">モーター</label>
+                        <select id="motor">
+                            <option value="">選択してください</option>
+                            <option value="マッハダッシュ">マッハダッシュ</option>
+                            <option value="ハイパーダッシュ">ハイパーダッシュ</option>
+                            <option value="ライトダッシュ">ライトダッシュ</option>
+                            <option value="トルクチューン">トルクチューン</option>
+                            <option value="その他">その他</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
                         <label for="gearRatio">ギア比</label>
                         <select id="gearRatio">
                             <option value="">選択してください</option>
@@ -818,6 +839,18 @@
                         <option value="">選択してください</option>
                         <option value="ローフリクション">ローフリクション</option>
                         <option value="スーパーハード">スーパーハード</option>
+                        <option value="その他">その他</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="editMotor">モーター</label>
+                    <select id="editMotor">
+                        <option value="">選択してください</option>
+                        <option value="マッハダッシュ">マッハダッシュ</option>
+                        <option value="ハイパーダッシュ">ハイパーダッシュ</option>
+                        <option value="ライトダッシュ">ライトダッシュ</option>
+                        <option value="トルクチューン">トルクチューン</option>
                         <option value="その他">その他</option>
                     </select>
                 </div>
@@ -1282,6 +1315,9 @@
             if (defaultSettings.tireType) {
                 document.getElementById('tireType').value = defaultSettings.tireType;
             }
+            if (defaultSettings.motor) {
+                document.getElementById('motor').value = defaultSettings.motor;
+            }
             if (defaultSettings.gearRatio) {
                 document.getElementById('gearRatio').value = defaultSettings.gearRatio;
             }
@@ -1317,6 +1353,7 @@
             const checkerSpeed = document.getElementById('checkerSpeed').value;
             const tireDiameter = document.getElementById('tireDiameter').value;
             const tireType = document.getElementById('tireType').value;
+            const motor = document.getElementById('motor').value;
             const gearRatio = document.getElementById('gearRatio').value;
             const brake = document.getElementById('brake').value;
             const remarks = document.getElementById('remarks').value;
@@ -1336,6 +1373,7 @@
                 checkerSpeed,
                 tireDiameter,
                 tireType,
+                motor,
                 gearRatio,
                 brake,
                 remarks
@@ -1349,6 +1387,7 @@
                 checkerSpeed,
                 tireDiameter,
                 tireType,
+                motor,
                 gearRatio,
                 brake,
                 remarks,
@@ -1515,6 +1554,11 @@
                 <div class="form-group">
                     <label>タイヤの種類</label>
                     <p>${race.tireType || '未設定'}</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>モーター</label>
+                    <p>${race.motor || '未設定'}</p>
                 </div>
                 
                 <div class="form-group">
@@ -1687,6 +1731,7 @@
                 document.getElementById('editCheckerSpeed').value = race.checkerSpeed || '';
                 document.getElementById('editTireDiameter').value = race.tireDiameter || '';
                 document.getElementById('editTireType').value = race.tireType || '';
+                document.getElementById('editMotor').value = race.motor || '';
                 document.getElementById('editGearRatio').value = race.gearRatio || '';
                 document.getElementById('editBrake').value = race.brake || '';
                 document.getElementById('editRemarks').value = race.remarks || '';
@@ -1714,6 +1759,7 @@
             const checkerSpeed = document.getElementById('editCheckerSpeed').value;
             const tireDiameter = document.getElementById('editTireDiameter').value;
             const tireType = document.getElementById('editTireType').value;
+            const motor = document.getElementById('editMotor').value;
             const gearRatio = document.getElementById('editGearRatio').value;
             const brake = document.getElementById('editBrake').value;
             const remarks = document.getElementById('editRemarks').value;
@@ -1732,6 +1778,7 @@
             race.checkerSpeed = checkerSpeed;
             race.tireDiameter = tireDiameter;
             race.tireType = tireType;
+            race.motor = motor;
             race.gearRatio = gearRatio;
             race.brake = brake;
             race.remarks = remarks;
@@ -1744,6 +1791,7 @@
                 checkerSpeed,
                 tireDiameter,
                 tireType,
+                motor,
                 gearRatio,
                 brake,
                 remarks
@@ -2066,6 +2114,42 @@
             element.addEventListener('touchstart', touchStartHandler, { passive: false });
             element.addEventListener('touchmove', touchMoveHandler, { passive: false });
             element.addEventListener('touchend', touchEndHandler, { passive: false });
+        }
+
+        // Service Worker の登録
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(function(registration) {
+                        console.log('Service Worker: Registration successful with scope: ', registration.scope);
+                        
+                        // Update があった場合の処理
+                        registration.addEventListener('updatefound', function() {
+                            const newWorker = registration.installing;
+                            console.log('Service Worker: New version available');
+                            
+                            if (newWorker) {
+                                newWorker.addEventListener('statechange', function() {
+                                    if (newWorker.state === 'installed') {
+                                        if (navigator.serviceWorker.controller) {
+                                            // 新しいバージョンが利用可能
+                                            console.log('Service Worker: New content is available');
+                                            if (confirm('新しいバージョンが利用可能です。更新しますか？')) {
+                                                window.location.reload();
+                                            }
+                                        } else {
+                                            // 初回インストール完了
+                                            console.log('Service Worker: Content is now available offline');
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    })
+                    .catch(function(error) {
+                        console.log('Service Worker: Registration failed: ', error);
+                    });
+            });
         }
 
         // アプリ初期化
