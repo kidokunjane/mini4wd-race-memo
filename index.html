@@ -247,15 +247,20 @@
         }
 
         .race-item.dragging {
-            transform: scale(1.05) rotate(2deg);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
             z-index: 100;
-            opacity: 0.9;
+            opacity: 0.95;
+            transition: none;
         }
 
         .race-item.drag-over {
-            border-top: 3px solid #007AFF;
-            margin-top: 2rem;
+            transform: translateY(8px);
+            transition: transform 0.2s ease;
+        }
+
+        .race-item:not(.dragging) {
+            transition: transform 0.2s ease;
         }
 
         .race-item.swiping {
@@ -292,28 +297,41 @@
             left: 0.5rem;
             top: 50%;
             transform: translateY(-50%);
-            width: 20px;
-            height: 20px;
-            opacity: 0.3;
+            width: 28px;
+            height: 28px;
+            opacity: 0.5;
             cursor: grab;
             display: flex;
             flex-direction: column;
+            align-items: center;
             justify-content: center;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            border-radius: 4px;
             gap: 2px;
         }
 
         .drag-handle::before,
         .drag-handle::after {
             content: '';
-            width: 3px;
-            height: 3px;
-            background: #666;
-            border-radius: 50%;
-            box-shadow: 0 6px 0 #666, 0 12px 0 #666;
+            width: 18px;
+            height: 2px;
+            background: #c7c7cc;
+            border-radius: 1px;
+            box-shadow: 
+                0 4px 0 #c7c7cc,
+                0 8px 0 #c7c7cc;
+        }
+
+        .drag-handle::after {
+            display: none;
         }
 
         .drag-handle:active {
             cursor: grabbing;
+            opacity: 0.8;
+            background: rgba(0, 0, 0, 0.05);
         }
 
         .race-item h3 {
@@ -1439,7 +1457,7 @@
                     <button class="favorite-btn ${race.isFavorite ? 'favorited' : 'not-favorited'}" onclick="toggleFavorite('${race.id}', event)">
                         ${race.isFavorite ? '❤️' : '🤍'}
                     </button>
-                    <div style="margin-left: 2rem;">
+                    <div style="margin-left: 3rem;">
                         <h3>${race.eventName}</h3>
                         <div class="meta">
                             ${race.voltage ? `電圧: ${race.voltage}V` : ''}
@@ -1584,11 +1602,14 @@
             
             if (videoFile) {
                 // 動画サイズをチェック
-                const maxSize = 10 * 1024 * 1024; // 10MB
+                const maxSize = 50 * 1024 * 1024; // 50MB
                 if (videoFile.size > maxSize) {
-                    alert('動画サイズが大きすぎます。10MB以下の動画を選択してください。');
+                    alert('動画サイズが大きすぎます。50MB以下の動画を選択してください。');
                     return;
                 }
+                
+                // 動画サイズをログ出力
+                console.log(`動画サイズ: ${(videoFile.size / (1024 * 1024)).toFixed(1)}MB`);
                 
                 const reader = new FileReader();
                 reader.onload = async function(e) {
@@ -1603,7 +1624,7 @@
                     } catch (error) {
                         // 保存に失敗した場合、元に戻す
                         race.raceVideo = originalVideo;
-                        alert('動画の保存に失敗しました。');
+                        alert('動画の保存に失敗しました。容量が不足している可能性があります。');
                         console.error('動画保存エラー:', error);
                     }
                 };
@@ -1813,28 +1834,88 @@
             
             draggedElement.classList.add('dragging');
             
+            // 初期タッチ位置を記録
+            let startY = 0;
+            let elementHeight = draggedElement.offsetHeight;
+            
+            if (event.type === 'touchstart') {
+                startY = event.touches[0].clientY;
+            } else {
+                startY = event.clientY;
+            }
+            
             const moveHandler = (e) => {
                 if (!isDragging) return;
                 
-                const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                let clientY;
+                if (e.type === 'touchmove') {
+                    if (!e.touches || e.touches.length === 0) return;
+                    clientY = e.touches[0].clientY;
+                    e.preventDefault(); // スクロールを防ぐ
+                } else {
+                    clientY = e.clientY;
+                }
+                
                 if (!clientY) return;
                 
                 // ドラッグ中の要素の位置を更新
                 draggedElement.style.position = 'fixed';
                 draggedElement.style.left = '1rem';
                 draggedElement.style.right = '1rem';
-                draggedElement.style.top = (clientY - 50) + 'px';
+                draggedElement.style.top = (clientY - elementHeight / 2) + 'px';
                 draggedElement.style.zIndex = '1000';
+                draggedElement.style.pointerEvents = 'none';
                 
-                // ドロップターゲットを探す
+                // 他の要素をリセット
                 const raceItems = document.querySelectorAll('.race-item:not(.dragging)');
                 raceItems.forEach(item => {
                     item.classList.remove('drag-over');
+                    item.style.transform = '';
+                });
+                
+                // 最も近い要素を探して適切にアニメーション
+                let closestItem = null;
+                let closestDistance = Infinity;
+                let insertBefore = false;
+                
+                raceItems.forEach(item => {
                     const rect = item.getBoundingClientRect();
-                    if (clientY > rect.top && clientY < rect.bottom) {
-                        item.classList.add('drag-over');
+                    const itemCenterY = rect.top + rect.height / 2;
+                    const distance = Math.abs(clientY - itemCenterY);
+                    
+                    if (distance < closestDistance && distance < rect.height) {
+                        closestDistance = distance;
+                        closestItem = item;
+                        insertBefore = clientY < itemCenterY;
                     }
                 });
+                
+                if (closestItem) {
+                    // 挿入位置に応じて他の要素をずらす
+                    const draggedIndex = Array.from(raceItems).findIndex(item => 
+                        item.dataset.raceId === draggedRaceId
+                    );
+                    const targetIndex = Array.from(raceItems).indexOf(closestItem);
+                    
+                    raceItems.forEach((item, index) => {
+                        if (item === closestItem) {
+                            if (insertBefore && index < draggedIndex) {
+                                item.style.transform = `translateY(${elementHeight + 16}px)`;
+                            } else if (!insertBefore && index > draggedIndex) {
+                                item.style.transform = `translateY(-${elementHeight + 16}px)`;
+                            }
+                        } else if ((insertBefore && index >= targetIndex && index < draggedIndex) ||
+                                 (!insertBefore && index <= targetIndex && index > draggedIndex)) {
+                            if (insertBefore) {
+                                item.style.transform = `translateY(${elementHeight + 16}px)`;
+                            } else {
+                                item.style.transform = `translateY(-${elementHeight + 16}px)`;
+                            }
+                        }
+                    });
+                    
+                    closestItem.classList.add('drag-over');
+                }
             };
             
             const endHandler = (e) => {
@@ -1847,6 +1928,7 @@
                 draggedElement.style.right = '';
                 draggedElement.style.top = '';
                 draggedElement.style.zIndex = '';
+                draggedElement.style.pointerEvents = '';
                 
                 // ドロップターゲットを見つける
                 const dropTarget = document.querySelector('.race-item.drag-over');
@@ -1854,23 +1936,24 @@
                     reorderRaces(draggedRaceId, dropTarget.dataset.raceId);
                 }
                 
-                // すべてのドラッグ関連クラスを削除
+                // すべてのドラッグ関連スタイルを削除
                 document.querySelectorAll('.race-item').forEach(item => {
                     item.classList.remove('drag-over');
+                    item.style.transform = '';
                 });
                 
                 draggedElement = null;
                 draggedRaceId = null;
                 
-                document.removeEventListener('mousemove', moveHandler);
+                document.removeEventListener('mousemove', moveHandler, { passive: false });
                 document.removeEventListener('mouseup', endHandler);
-                document.removeEventListener('touchmove', moveHandler);
+                document.removeEventListener('touchmove', moveHandler, { passive: false });
                 document.removeEventListener('touchend', endHandler);
             };
             
-            document.addEventListener('mousemove', moveHandler);
+            document.addEventListener('mousemove', moveHandler, { passive: false });
             document.addEventListener('mouseup', endHandler);
-            document.addEventListener('touchmove', moveHandler);
+            document.addEventListener('touchmove', moveHandler, { passive: false });
             document.addEventListener('touchend', endHandler);
         }
 
@@ -1879,7 +1962,7 @@
             const draggedIndex = races.findIndex(r => r.id === draggedId);
             const targetIndex = races.findIndex(r => r.id === targetId);
             
-            if (draggedIndex === -1 || targetIndex === -1) return;
+            if (draggedIndex === -1 || targetIndex === -1 || draggedIndex === targetIndex) return;
             
             // 配列の要素を移動
             const draggedRace = races.splice(draggedIndex, 1)[0];
@@ -1887,7 +1970,10 @@
             
             try {
                 await saveData();
-                renderRaceList();
+                // 少し遅らせてからリストを再描画（アニメーションを見せるため）
+                setTimeout(() => {
+                    renderRaceList();
+                }, 150);
             } catch (error) {
                 console.error('並び順保存エラー:', error);
                 // エラー時は元に戻す
@@ -1903,6 +1989,11 @@
             let isSwipeActive = false;
             
             const touchStartHandler = (e) => {
+                // ドラッグハンドルをタップした場合はスワイプを無効にする
+                if (e.target.closest('.drag-handle')) {
+                    return;
+                }
+                
                 const touch = e.touches[0];
                 startX = touch.clientX;
                 startY = touch.clientY;
