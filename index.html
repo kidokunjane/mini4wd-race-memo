@@ -31,7 +31,14 @@
             background: #f8f9fa;
             min-height: 100vh;
             padding-bottom: env(safe-area-inset-bottom);
-            padding-top: env(safe-area-inset-top);
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .safe-area {
+            padding-top: env(safe-area-inset-top, 0);
+            padding-bottom: env(safe-area-inset-bottom, 0);
+            min-height: 100vh;
         }
 
         .header {
@@ -39,14 +46,13 @@
             color: #333;
             padding: 1rem;
             position: sticky;
-            top: env(safe-area-inset-top, 0);
+            top: 0;
             z-index: 100;
             box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
             border-bottom: 1px solid #e9ecef;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding-top: max(1rem, env(safe-area-inset-top, 0) + 0.5rem);
         }
 
         .header h1 {
@@ -73,11 +79,17 @@
             background-color: #f0f0f0;
         }
 
+        .version-info {
+            font-size: 0.75rem;
+            color: #999;
+            opacity: 0.8;
+            font-weight: normal;
+        }
+
         .container {
             max-width: 600px;
             margin: 0 auto;
             padding: 1rem;
-            min-height: calc(100vh - 80px - env(safe-area-inset-top, 0));
         }
 
         .screen {
@@ -685,16 +697,17 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="home-icon" onclick="showHome()" title="ホームに戻る">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                <polyline points="9,22 9,12 15,12 15,22"></polyline>
-            </svg>
+    <div class="safe-area">
+        <div class="header">
+            <div class="home-icon" onclick="showHome()" title="ホームに戻る">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9,22 9,12 15,12 15,22"></polyline>
+                </svg>
+            </div>
+            <h1>ミニ四駆レースメモ</h1>
+            <div class="version-info" id="versionInfo">Loading...</div>
         </div>
-        <h1>ミニ四駆レースメモ</h1>
-        <div style="width: 32px;"></div> <!-- Spacer for centering title -->
-    </div>
 
     <!-- トップ画面 -->
     <div id="homeScreen" class="screen active">
@@ -931,7 +944,7 @@
             </div>
         </div>
     </div>
-
+    </div>
 
     <script>
         let races = [];
@@ -2264,7 +2277,7 @@
         }
 
         // Service Worker の登録
-        if ('serviceWorker' in navigator) {
+        if ('serviceWorker' in navigator && location.protocol !== 'file:') {
             window.addEventListener('load', function() {
                 navigator.serviceWorker.register('./sw.js')
                     .then(function(registration) {
@@ -2297,11 +2310,74 @@
                         console.log('Service Worker: Registration failed: ', error);
                     });
             });
+        } else if (location.protocol === 'file:') {
+            console.log('Service Worker: Skipped registration (file:// protocol not supported)');
+        }
+
+        // アプリのバージョン（手動更新）
+        const APP_VERSION = 'v1.0.8';
+        
+        // Service Worker バージョン情報を取得
+        async function getServiceWorkerVersion() {
+            // ローカルファイルの場合は固定バージョンを返す
+            if (location.protocol === 'file:') {
+                console.log('Using fixed version for file:// protocol:', APP_VERSION);
+                return APP_VERSION;
+            }
+            
+            try {
+                console.log('Attempting to fetch sw.js for version detection...');
+                // キャッシュを回避するためにタイムスタンプを追加
+                const response = await fetch('./sw.js?cache=' + Date.now());
+                
+                if (!response.ok) {
+                    console.error('Failed to fetch sw.js, status:', response.status);
+                    return APP_VERSION;
+                }
+                
+                const swText = await response.text();
+                console.log('SW file loaded successfully, length:', swText.length);
+                console.log('First 300 chars:', swText.substring(0, 300));
+                
+                const versionMatch = swText.match(/const VERSION = ['"']([^'"]+)['"']/);
+                console.log('Version regex match result:', versionMatch);
+                
+                if (versionMatch && versionMatch[1]) {
+                    console.log('Dynamic version detected:', versionMatch[1]);
+                    return versionMatch[1];
+                } else {
+                    console.log('No version found in sw.js, using fallback:', APP_VERSION);
+                    return APP_VERSION;
+                }
+            } catch (error) {
+                console.error('Error fetching service worker version:', error);
+                return APP_VERSION;
+            }
+        }
+
+        // バージョン情報を初期化時に設定
+        async function initVersion() {
+            if ('serviceWorker' in navigator) {
+                const version = await getServiceWorkerVersion();
+                document.getElementById('versionInfo').textContent = version;
+                
+                // Service Worker から直接バージョンを取得する方法も試行
+                if (navigator.serviceWorker.controller) {
+                    try {
+                        navigator.serviceWorker.controller.postMessage({ action: 'getVersion' });
+                    } catch (e) {
+                        console.log('Failed to get version from SW controller');
+                    }
+                }
+            } else {
+                document.getElementById('versionInfo').textContent = 'N/A';
+            }
         }
 
         // アプリ初期化
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
+            initVersion();
         });
     </script>
 </body>
