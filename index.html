@@ -28,9 +28,8 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f8f9fa;
+            background: white;
             min-height: 100vh;
-            padding-bottom: env(safe-area-inset-bottom);
             margin: 0;
             overflow-x: hidden;
         }
@@ -39,6 +38,19 @@
             padding-top: env(safe-area-inset-top, 0);
             padding-bottom: env(safe-area-inset-bottom, 0);
             min-height: 100vh;
+            background: #f8f9fa;
+            position: relative;
+        }
+
+        .safe-area::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: env(safe-area-inset-top, 0);
+            background: white;
+            z-index: 1000;
         }
 
         .header {
@@ -2042,87 +2054,34 @@
             
             draggedElement.classList.add('dragging');
             
-            // 初期タッチ位置を記録
-            let startY = 0;
-            let elementHeight = draggedElement.offsetHeight;
-            
-            if (event.type === 'touchstart') {
-                startY = event.touches[0].clientY;
-            } else {
-                startY = event.clientY;
-            }
+            let startY = (event.type === 'touchstart') ? event.touches[0].clientY : event.clientY;
+            let currentDropTarget = null;
             
             const moveHandler = (e) => {
                 if (!isDragging) return;
+                e.preventDefault();
                 
-                let clientY;
-                if (e.type === 'touchmove') {
-                    if (!e.touches || e.touches.length === 0) return;
-                    clientY = e.touches[0].clientY;
-                    e.preventDefault(); // スクロールを防ぐ
-                } else {
-                    clientY = e.clientY;
-                }
-                
+                const clientY = (e.type === 'touchmove') ? e.touches[0].clientY : e.clientY;
                 if (!clientY) return;
                 
-                // ドラッグ中の要素の位置を更新
-                draggedElement.style.position = 'fixed';
-                draggedElement.style.left = '1rem';
-                draggedElement.style.right = '1rem';
-                draggedElement.style.top = (clientY - elementHeight / 2) + 'px';
-                draggedElement.style.zIndex = '1000';
-                draggedElement.style.pointerEvents = 'none';
+                // 現在のドロップターゲットをクリア
+                if (currentDropTarget) {
+                    currentDropTarget.classList.remove('drag-over');
+                }
                 
-                // 他の要素をリセット
+                // ドラッグ中の要素を移動
+                const deltaY = clientY - startY;
+                draggedElement.style.transform = `translateY(${deltaY}px)`;
+                
+                // 新しいドロップターゲットを見つける
                 const raceItems = document.querySelectorAll('.race-item:not(.dragging)');
-                raceItems.forEach(item => {
-                    item.classList.remove('drag-over');
-                    item.style.transform = '';
-                });
-                
-                // 最も近い要素を探して適切にアニメーション
-                let closestItem = null;
-                let closestDistance = Infinity;
-                let insertBefore = false;
-                
-                raceItems.forEach(item => {
+                for (let item of raceItems) {
                     const rect = item.getBoundingClientRect();
-                    const itemCenterY = rect.top + rect.height / 2;
-                    const distance = Math.abs(clientY - itemCenterY);
-                    
-                    if (distance < closestDistance && distance < rect.height) {
-                        closestDistance = distance;
-                        closestItem = item;
-                        insertBefore = clientY < itemCenterY;
+                    if (clientY >= rect.top && clientY <= rect.bottom) {
+                        currentDropTarget = item;
+                        item.classList.add('drag-over');
+                        break;
                     }
-                });
-                
-                if (closestItem) {
-                    // 挿入位置に応じて他の要素をずらす
-                    const draggedIndex = Array.from(raceItems).findIndex(item => 
-                        item.dataset.raceId === draggedRaceId
-                    );
-                    const targetIndex = Array.from(raceItems).indexOf(closestItem);
-                    
-                    raceItems.forEach((item, index) => {
-                        if (item === closestItem) {
-                            if (insertBefore && index < draggedIndex) {
-                                item.style.transform = `translateY(${elementHeight + 16}px)`;
-                            } else if (!insertBefore && index > draggedIndex) {
-                                item.style.transform = `translateY(-${elementHeight + 16}px)`;
-                            }
-                        } else if ((insertBefore && index >= targetIndex && index < draggedIndex) ||
-                                 (!insertBefore && index <= targetIndex && index > draggedIndex)) {
-                            if (insertBefore) {
-                                item.style.transform = `translateY(${elementHeight + 16}px)`;
-                            } else {
-                                item.style.transform = `translateY(-${elementHeight + 16}px)`;
-                            }
-                        }
-                    });
-                    
-                    closestItem.classList.add('drag-over');
                 }
             };
             
@@ -2131,37 +2090,31 @@
                 
                 isDragging = false;
                 draggedElement.classList.remove('dragging');
-                draggedElement.style.position = '';
-                draggedElement.style.left = '';
-                draggedElement.style.right = '';
-                draggedElement.style.top = '';
-                draggedElement.style.zIndex = '';
-                draggedElement.style.pointerEvents = '';
+                draggedElement.style.transform = '';
                 
-                // ドロップターゲットを見つける
-                const dropTarget = document.querySelector('.race-item.drag-over');
-                if (dropTarget && dropTarget.dataset.raceId !== draggedRaceId) {
-                    reorderRaces(draggedRaceId, dropTarget.dataset.raceId);
+                // ドロップ処理
+                if (currentDropTarget && currentDropTarget.dataset.raceId !== draggedRaceId) {
+                    reorderRaces(draggedRaceId, currentDropTarget.dataset.raceId);
                 }
                 
-                // すべてのドラッグ関連スタイルを削除
+                // クリーンアップ
                 document.querySelectorAll('.race-item').forEach(item => {
                     item.classList.remove('drag-over');
-                    item.style.transform = '';
                 });
                 
                 draggedElement = null;
                 draggedRaceId = null;
+                currentDropTarget = null;
                 
-                document.removeEventListener('mousemove', moveHandler, { passive: false });
+                document.removeEventListener('mousemove', moveHandler);
                 document.removeEventListener('mouseup', endHandler);
-                document.removeEventListener('touchmove', moveHandler, { passive: false });
+                document.removeEventListener('touchmove', moveHandler);
                 document.removeEventListener('touchend', endHandler);
             };
             
-            document.addEventListener('mousemove', moveHandler, { passive: false });
+            document.addEventListener('mousemove', moveHandler);
             document.addEventListener('mouseup', endHandler);
-            document.addEventListener('touchmove', moveHandler, { passive: false });
+            document.addEventListener('touchmove', moveHandler);
             document.addEventListener('touchend', endHandler);
         }
 
