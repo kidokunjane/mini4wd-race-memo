@@ -36,13 +36,15 @@
         .header {
             background: white;
             color: #333;
-            padding: 1.5rem 1rem;
-            text-align: center;
+            padding: 1rem;
             position: sticky;
             top: 0;
             z-index: 100;
             box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
             border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .header h1 {
@@ -50,13 +52,30 @@
             font-weight: 700;
             letter-spacing: 0.5px;
             color: #2c3e50;
+            margin: 0;
+        }
+
+        .home-icon {
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            color: #007AFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .home-icon:hover {
+            background-color: #f0f0f0;
         }
 
         .container {
             max-width: 600px;
             margin: 0 auto;
             padding: 1rem;
-            min-height: calc(100vh - 120px);
+            min-height: calc(100vh - 80px);
         }
 
         .screen {
@@ -365,19 +384,6 @@
             border-radius: 6px;
         }
 
-        .nav-buttons {
-            position: fixed;
-            bottom: env(safe-area-inset-bottom, 0);
-            left: 0;
-            right: 0;
-            background: white;
-            padding: 1rem;
-            border-top: 1px solid #e9ecef;
-            display: flex;
-            gap: 0.5rem;
-            box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.05);
-            z-index: 200;
-        }
 
         .add-event-btn {
             position: fixed;
@@ -678,7 +684,14 @@
 </head>
 <body>
     <div class="header">
+        <div class="home-icon" onclick="showHome()" title="ホームに戻る">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9,22 9,12 15,12 15,22"></polyline>
+            </svg>
+        </div>
         <h1>ミニ四駆レースメモ</h1>
+        <div style="width: 32px;"></div> <!-- Spacer for centering title -->
     </div>
 
     <!-- トップ画面 -->
@@ -917,9 +930,6 @@
         </div>
     </div>
 
-    <div class="nav-buttons">
-        <button class="btn" onclick="showHome()" style="flex: 1;">ホーム</button>
-    </div>
 
     <script>
         let races = [];
@@ -1833,6 +1843,19 @@
                 closeResultModal();
             }
         });
+
+        // 編集モーダルのイベント履歴を更新
+        function updateEditEventSelect() {
+            const editEventHistory = document.getElementById('editEventHistory');
+            if (editEventHistory) {
+                editEventHistory.innerHTML = '';
+                events.forEach(event => {
+                    const option = document.createElement('option');
+                    option.value = event;
+                    editEventHistory.appendChild(option);
+                });
+            }
+        }
 
         // セッティング編集モーダル表示
         function showSettingModal(raceId) {
