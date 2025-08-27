@@ -95,6 +95,8 @@
             color: #999;
             opacity: 0.8;
             font-weight: normal;
+            cursor: pointer;
+            text-decoration: underline;
         }
 
         .container {
@@ -802,7 +804,7 @@
                 </svg>
             </div>
             <h1>ミニ四駆レースメモ</h1>
-            <div class="version-info" id="versionInfo">Loading...</div>
+            <div class="version-info" id="versionInfo" title="変更履歴を表示">Loading...</div>
         </div>
 
     <!-- トップ画面 -->
@@ -961,6 +963,28 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label for="raceStartLane">スタートレーン</label>
+                    <select id="raceStartLane">
+                        <option value="">選択してください</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="coSection">COセクション</label>
+                    <input type="text" id="coSection" placeholder="例: 2-3セクションのテーブルトップ">
+                </div>
+
+                <div class="form-group">
+                    <label for="raceImpression">レースの感想</label>
+                    <textarea id="raceImpression" placeholder="走りの印象や改善点など"></textarea>
+                </div>
+
                 <button class="btn btn-full" onclick="saveRaceResult()">結果を保存</button>
             </div>
         </div>
@@ -1045,6 +1069,19 @@
                 </div>
 
                 <button class="btn btn-full" onclick="saveSettingChanges()">セッティングを保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 変更履歴モーダル -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>変更履歴</h3>
+                <button class="close-btn" onclick="closeHistoryModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <pre id="historyContent" style="white-space: pre-wrap; line-height: 1.4; font-size: 0.95rem;">読み込み中...</pre>
             </div>
         </div>
     </div>
@@ -1191,6 +1228,35 @@
                     putRequest.onerror = () => reject(putRequest.error);
                 }
             });
+        }
+
+        // 増分保存用ユーティリティ
+        async function saveRaceToDB(race) {
+            if (!db) await initDB();
+            const raceData = { ...race };
+            if (race.id && videoFiles.has(race.id)) {
+                raceData.videoBlob = videoFiles.get(race.id);
+                raceData.hasVideo = true;
+            } else if (race.raceVideo) {
+                raceData.hasVideo = true;
+                delete raceData.raceVideo;
+            }
+            return saveDataToDB('races', raceData);
+        }
+
+        async function deleteRaceFromDB(raceId) {
+            if (!db) await initDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['races'], 'readwrite');
+                const store = transaction.objectStore('races');
+                const req = store.delete(raceId);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function saveEventsToDB() {
+            return saveDataToDB('settings', { key: 'events', value: events });
         }
 
         async function migrateFromLocalStorage() {
@@ -1396,7 +1462,7 @@
                 events.push(eventName);
                 updateEventHistory();
                 try {
-                    await saveData();
+                    await saveEventsToDB();
                 } catch (error) {
                     console.error('履歴保存エラー:', error);
                 }
@@ -1641,14 +1707,24 @@
                 raceTime: null,
                 raceVideo: null,
                 raceRank: null,
+                startLane: '',
+                coSection: '',
+                impression: '',
                 isFavorite: false
             };
             
             races.unshift(newRace);
             
             try {
-                await saveData();
-                renderRaceList();
+                await saveRaceToDB(newRace);
+                // 差分描画: 現在のタブに応じて先頭に追加
+                if (currentTab === 'favorites') {
+                    if (newRace.isFavorite) {
+                        prependRaceToList(newRace);
+                    }
+                } else {
+                    prependRaceToList(newRace);
+                }
                 showHome();
             } catch (error) {
                 races.shift(); // 保存失敗時は追加したレースを削除
@@ -1657,102 +1733,108 @@
             }
         });
 
+        // 差分描画ユーティリティ
+        function createRaceListItem(race) {
+            const raceItem = document.createElement('li');
+            let raceItemClass = 'race-item';
+            if (race.raceRank === '1位') raceItemClass += ' rank-1';
+            else if (race.raceRank === '2位') raceItemClass += ' rank-2';
+            else if (race.raceRank === '3位') raceItemClass += ' rank-3';
+            raceItem.className = raceItemClass;
+            raceItem.dataset.raceId = race.id;
+            raceItem.onclick = (e) => {
+                if (!isSwiping && !isDragging) {
+                    showRaceDetail(race.id);
+                }
+            };
+
+            const photos = race.photos.length > 0
+                ? `<div class="photos">${race.photos.slice(0, 3).map(photo => `<img loading="lazy" src="${photo}" alt="マシン写真">`).join('')}</div>`
+                : '';
+            const raceTimeInfo = race.raceTime ? `<br><span class="race-time-highlight">タイム: ${race.raceTime}秒</span>` : '';
+            const raceRankInfo = race.raceRank ? ` | 順位: ${race.raceRank}` : '';
+            const updatedInfo = race.updatedAt && race.updatedAt !== race.createdAt ? ` | 更新: ${formatDateTime(race.updatedAt)}` : '';
+            let rankBadge = '';
+            if (race.raceRank) {
+                let badgeClass = 'rank-other';
+                let badgeText = race.raceRank;
+                if (race.raceRank === '1位') { badgeClass = 'rank-1'; badgeText = '🏆'; }
+                else if (race.raceRank === '2位') { badgeClass = 'rank-2'; badgeText = '🥈'; }
+                else if (race.raceRank === '3位') { badgeClass = 'rank-3'; badgeText = '🥉'; }
+                else if (race.raceRank === 'CO') { badgeClass = 'rank-other'; badgeText = 'CO'; }
+                else { badgeText = race.raceRank.replace('位', ''); }
+                rankBadge = `<div class="rank-badge ${badgeClass}">${badgeText}</div>`;
+            }
+
+            raceItem.innerHTML = `
+                <div class="drag-handle" onmousedown="startDrag(event, '${race.id}')" ontouchstart="startDrag(event, '${race.id}')"></div>
+                <div class="swipe-action" onclick="deleteRace('${race.id}')">🗑️</div>
+                ${rankBadge}
+                <button class="favorite-btn ${race.isFavorite ? 'favorited' : 'not-favorited'}" onclick="toggleFavorite('${race.id}', event)">
+                    ${race.isFavorite ? '❤️' : '🤍'}
+                </button>
+                <div style="margin-left: 3rem;">
+                    <h3>${race.eventName}</h3>
+                    <div class="meta">
+                        ${race.voltage ? `電圧: ${race.voltage}V` : ''}
+                        ${race.checkerSpeed ? ` | チェッカー: ${race.checkerSpeed}` : ''}
+                        ${raceTimeInfo}${raceRankInfo}
+                        <br>作成: ${formatDateTime(race.createdAt)}${updatedInfo}
+                    </div>
+                    ${photos}
+                </div>`;
+
+            addSwipeListeners(raceItem, race.id);
+            return raceItem;
+        }
+
+        function updateRaceListItem(race) {
+            const raceList = document.getElementById('raceList');
+            const oldEl = raceList.querySelector(`.race-item[data-race-id="${race.id}"]`);
+            if (!oldEl) return;
+            const newEl = createRaceListItem(race);
+            oldEl.parentNode.replaceChild(newEl, oldEl);
+        }
+
+        function prependRaceToList(race) {
+            const raceList = document.getElementById('raceList');
+            const hasItems = !!raceList.querySelector('.race-item');
+            if (!hasItems) {
+                renderRaceList();
+                return;
+            }
+            raceList.insertBefore(createRaceListItem(race), raceList.firstChild);
+        }
+
+        function removeRaceFromList(raceId) {
+            const raceList = document.getElementById('raceList');
+            const el = raceList.querySelector(`.race-item[data-race-id="${raceId}"]`);
+            if (el) el.remove();
+            if (!raceList.querySelector('.race-item')) {
+                const message = currentTab === 'favorites'
+                    ? 'お気に入りのレースがありません<br>ハートマークをタップしてお気に入りに追加してください'
+                    : 'まだレースがありません<br>+ボタンから追加してください';
+                raceList.innerHTML = `<li style="text-align: center; color: #666; padding: 2rem;">${message}</li>`;
+            }
+        }
+
         // レースリストの描画
         function renderRaceList() {
             const raceList = document.getElementById('raceList');
             raceList.innerHTML = '';
-            
-            // フィルタリング
             let filteredRaces = races;
             if (currentTab === 'favorites') {
                 filteredRaces = races.filter(race => race.isFavorite);
             }
-            
             if (filteredRaces.length === 0) {
-                const message = currentTab === 'favorites' 
+                const message = currentTab === 'favorites'
                     ? 'お気に入りのレースがありません<br>ハートマークをタップしてお気に入りに追加してください'
                     : 'まだレースがありません<br>+ボタンから追加してください';
                 raceList.innerHTML = `<li style="text-align: center; color: #666; padding: 2rem;">${message}</li>`;
                 return;
             }
-            
             filteredRaces.forEach(race => {
-                const raceItem = document.createElement('li');
-                let raceItemClass = 'race-item';
-                
-                // 順位に応じたクラスを追加
-                if (race.raceRank === '1位') {
-                    raceItemClass += ' rank-1';
-                } else if (race.raceRank === '2位') {
-                    raceItemClass += ' rank-2';
-                } else if (race.raceRank === '3位') {
-                    raceItemClass += ' rank-3';
-                }
-                
-                raceItem.className = raceItemClass;
-                raceItem.dataset.raceId = race.id;
-                raceItem.onclick = (e) => {
-                    if (!isSwiping && !isDragging) {
-                        showRaceDetail(race.id);
-                    }
-                };
-                
-                // スワイプイベントリスナーを追加
-                addSwipeListeners(raceItem, race.id);
-                
-                const photos = race.photos.length > 0 
-                    ? `<div class="photos">${race.photos.slice(0, 3).map(photo => `<img src="${photo}" alt="マシン写真">`).join('')}</div>`
-                    : '';
-                
-                const raceTimeInfo = race.raceTime ? `<br><span class="race-time-highlight">タイム: ${race.raceTime}秒</span>` : '';
-                const raceRankInfo = race.raceRank ? ` | 順位: ${race.raceRank}` : '';
-                const updatedInfo = race.updatedAt && race.updatedAt !== race.createdAt ? ` | 更新: ${formatDateTime(race.updatedAt)}` : '';
-                
-                // 順位バッジの生成
-                let rankBadge = '';
-                if (race.raceRank) {
-                    let badgeClass = 'rank-other';
-                    let badgeText = race.raceRank;
-                    
-                    if (race.raceRank === '1位') {
-                        badgeClass = 'rank-1';
-                        badgeText = '🏆';
-                    } else if (race.raceRank === '2位') {
-                        badgeClass = 'rank-2';
-                        badgeText = '🥈';
-                    } else if (race.raceRank === '3位') {
-                        badgeClass = 'rank-3';
-                        badgeText = '🥉';
-                    } else if (race.raceRank === 'CO') {
-                        badgeClass = 'rank-other';
-                        badgeText = 'CO';
-                    } else {
-                        badgeText = race.raceRank.replace('位', '');
-                    }
-                    
-                    rankBadge = `<div class="rank-badge ${badgeClass}">${badgeText}</div>`;
-                }
-                
-                raceItem.innerHTML = `
-                    <div class="drag-handle" onmousedown="startDrag(event, '${race.id}')" ontouchstart="startDrag(event, '${race.id}')"></div>
-                    <div class="swipe-action" onclick="deleteRace('${race.id}')">🗑️</div>
-                    ${rankBadge}
-                    <button class="favorite-btn ${race.isFavorite ? 'favorited' : 'not-favorited'}" onclick="toggleFavorite('${race.id}', event)">
-                        ${race.isFavorite ? '❤️' : '🤍'}
-                    </button>
-                    <div style="margin-left: 3rem;">
-                        <h3>${race.eventName}</h3>
-                        <div class="meta">
-                            ${race.voltage ? `電圧: ${race.voltage}V` : ''}
-                            ${race.checkerSpeed ? ` | チェッカー: ${race.checkerSpeed}` : ''}
-                            ${raceTimeInfo}${raceRankInfo}
-                            <br>作成: ${formatDateTime(race.createdAt)}${updatedInfo}
-                        </div>
-                        ${photos}
-                    </div>
-                `;
-                
-                raceList.appendChild(raceItem);
+                raceList.appendChild(createRaceListItem(race));
             });
         }
 
@@ -1854,6 +1936,30 @@
                         <div class="detail-setting-value">${race.raceTime ? race.raceTime + '秒' : '未設定'}</div>
                     </div>
                 </div>
+
+                <div class="detail-setting-item">
+                    <div class="detail-setting-icon" style="background: #e3f2fd; color: #1976d2;">🏁</div>
+                    <div class="detail-setting-content">
+                        <div class="detail-setting-label">スタートレーン</div>
+                        <div class="detail-setting-value">${race.startLane || '未設定'}</div>
+                    </div>
+                </div>
+
+                <div class="detail-setting-item">
+                    <div class="detail-setting-icon" style="background: #fce4ec; color: #c2185b;">🚧</div>
+                    <div class="detail-setting-content">
+                        <div class="detail-setting-label">COセクション</div>
+                        <div class="detail-setting-value">${race.coSection || '未設定'}</div>
+                    </div>
+                </div>
+
+                <div class="detail-setting-item">
+                    <div class="detail-setting-icon" style="background: #e8eaf6; color: #3f51b5;">💬</div>
+                    <div class="detail-setting-content">
+                        <div class="detail-setting-label">レースの感想</div>
+                        <div class="detail-setting-value">${race.impression || '未設定'}</div>
+                    </div>
+                </div>
                 
                 <div class="detail-setting-item">
                     <div class="detail-setting-icon" style="background: ${race.raceRank === '1位' ? '#fff8e1' : race.raceRank === '2位' ? '#f3e5f5' : race.raceRank === '3位' ? '#fff3e0' : '#f5f5f5'}; color: ${race.raceRank === '1位' ? '#f57c00' : race.raceRank === '2位' ? '#7b1fa2' : race.raceRank === '3位' ? '#ff6f00' : '#666'};">${race.raceRank === '1位' ? '🏆' : race.raceRank === '2位' ? '🥈' : race.raceRank === '3位' ? '🥉' : '🏁'}</div>
@@ -1894,6 +2000,10 @@
                 } else {
                     document.getElementById('videoPreview').innerHTML = '';
                 }
+                document.getElementById('raceRank').value = race.raceRank || '';
+                document.getElementById('raceStartLane').value = race.startLane || '';
+                document.getElementById('coSection').value = race.coSection || '';
+                document.getElementById('raceImpression').value = race.impression || '';
             }
             
             document.getElementById('resultModal').style.display = 'block';
@@ -1913,6 +2023,9 @@
             
             const raceTime = document.getElementById('raceTime').value;
             const raceRank = document.getElementById('raceRank').value;
+            const startLane = document.getElementById('raceStartLane').value;
+            const coSection = document.getElementById('coSection').value.trim();
+            const impression = document.getElementById('raceImpression').value.trim();
             const videoFile = document.getElementById('raceVideo').files[0];
             
             const race = races.find(r => r.id === currentRaceId);
@@ -1920,6 +2033,9 @@
             
             race.raceTime = raceTime;
             race.raceRank = raceRank;
+            race.startLane = startLane;
+            race.coSection = coSection;
+            race.impression = impression;
             race.updatedAt = new Date().toISOString();
             
             if (videoFile) {
@@ -1937,9 +2053,8 @@
                     // ObjectURLを作成して動画参照を保存
                     const videoUrl = createVideoUrl(currentRaceId, videoFile);
                     race.raceVideo = videoUrl;
-                    
-                    await saveData();
-                    renderRaceList();
+                    await saveRaceToDB(race);
+                    updateRaceListItem(race);
                     showRaceDetail(currentRaceId);
                     closeResultModal();
                 } catch (error) {
@@ -1951,8 +2066,8 @@
                 }
             } else {
                 try {
-                    await saveData();
-                    renderRaceList();
+                    await saveRaceToDB(race);
+                    updateRaceListItem(race);
                     showRaceDetail(currentRaceId);
                     closeResultModal();
                 } catch (error) {
@@ -1972,8 +2087,8 @@
             // 動画URLをクリーンアップ
             removeVideoUrl(raceId);
             races = races.filter(race => race.id !== raceId);
-            await saveData();
-            renderRaceList();
+            await deleteRaceFromDB(raceId);
+            removeRaceFromList(raceId);
             showHome();
         }
 
@@ -2097,9 +2212,8 @@
                 remarks
             };
             await saveDefaultSettings();
-            
-            await saveData();
-            renderRaceList();
+            await saveRaceToDB(race);
+            updateRaceListItem(race);
             showRaceDetail(currentEditRaceId);
             closeSettingModal();
         }
@@ -2148,10 +2262,16 @@
             if (race) {
                 race.isFavorite = !race.isFavorite;
                 race.updatedAt = new Date().toISOString();
-                await saveData();
-                renderRaceList();
-                
-                // 詳細画面が開いている場合は更新
+                await saveRaceToDB(race);
+                if (currentTab === 'favorites') {
+                    if (race.isFavorite) {
+                        prependRaceToList(race);
+                    } else {
+                        removeRaceFromList(raceId);
+                    }
+                } else {
+                    updateRaceListItem(race);
+                }
                 if (currentRaceId === raceId && document.getElementById('detailScreen').classList.contains('active')) {
                     showRaceDetail(raceId);
                 }
@@ -2300,14 +2420,7 @@
             // UIを即座に更新
             renderRaceList();
             
-            // バックグラウンドでデータを保存
-            try {
-                await saveData();
-            } catch (error) {
-                console.error('並び順保存エラー:', error);
-                // エラー時は元に戻す
-                loadData();
-            }
+            // 並び順の永続化は行わない（パフォーマンス優先）
         }
 
         // スワイプイベントリスナーを追加
@@ -2436,7 +2549,7 @@
         }
 
         // アプリのバージョン（手動更新）
-        const APP_VERSION = 'v1.0.12';
+        const APP_VERSION = 'v1.0.15';
         
         // 写真拡大表示機能
         function showPhotoModal(photoSrc, index) {
@@ -2516,9 +2629,36 @@
         }
 
         // アプリ初期化
+        async function showHistoryModal() {
+            const modal = document.getElementById('historyModal');
+            const pre = document.getElementById('historyContent');
+            pre.textContent = '読み込み中...';
+            try {
+                const res = await fetch('./history.txt?cache=' + Date.now());
+                if (!res.ok) throw new Error('failed to load history');
+                const text = await res.text();
+                pre.textContent = text;
+            } catch (e) {
+                pre.textContent = '変更履歴を読み込めませんでした。';
+            }
+            modal.style.display = 'block';
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('historyModal').style.display = 'none';
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
             initVersion();
+            const vi = document.getElementById('versionInfo');
+            if (vi) {
+                vi.addEventListener('click', showHistoryModal);
+            }
+            // モーダル外クリックで閉じる
+            document.getElementById('historyModal').addEventListener('click', function(e) {
+                if (e.target === this) closeHistoryModal();
+            });
         });
     </script>
 </body>
