@@ -807,18 +807,35 @@
             <div class="version-info" id="versionInfo" title="変更履歴を表示">Loading...</div>
         </div>
 
-    <!-- トップ画面 -->
+    <!-- トップ画面（グループ一覧） -->
     <div id="homeScreen" class="screen active">
+        <div class="container">
+            <div class="card" style="margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+                <h2 style="font-size: 1.1rem;">グループ</h2>
+                <button class="btn btn-secondary" onclick="showCreateGroupPrompt()">グループを追加</button>
+            </div>
+            <ul id="groupList" class="race-list">
+                <!-- グループアイテムがここに追加される -->
+            </ul>
+        </div>
+        <button class="add-event-btn" title="グループを追加" onclick="showCreateGroupPrompt()">+</button>
+    </div>
+
+    <!-- グループ内のレース一覧画面 -->
+    <div id="groupScreen" class="screen">
         <div class="tabs">
             <button class="tab active" onclick="switchTab('all')">全て</button>
             <button class="tab" onclick="switchTab('favorites')">お気に入り</button>
         </div>
         <div class="container">
+            <div class="card" style="margin-bottom: 0.75rem;">
+                <h2 id="groupTitle" style="font-size: 1.1rem;">グループ</h2>
+            </div>
             <ul id="raceList" class="race-list">
                 <!-- レースアイテムがここに追加される -->
             </ul>
         </div>
-        <button class="add-event-btn" onclick="showNewRaceForm()">+</button>
+        <button class="add-event-btn" title="このグループにレース追加" onclick="showNewRaceFormInCurrentGroup()">+</button>
     </div>
 
     <!-- 新規レース登録画面 -->
@@ -1007,6 +1024,11 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="editGroup">グループ</label>
+                    <select id="editGroup"></select>
+                </div>
+
+                <div class="form-group">
                     <label for="editVoltage">電圧</label>
                     <input type="number" id="editVoltage" step="0.1" placeholder="例: 3.0">
                 </div>
@@ -1103,6 +1125,9 @@
         let currentTab = 'all';
         let currentEditRaceId = null;
         let db = null;
+        let groups = [];
+        let currentGroupId = null; // null: 未分類, otherwise group.id
+        let newRaceGroupId = null; // 新規レース作成時に割り当てたいグループID
         
         // 動画ファイル管理
         let videoFiles = new Map(); // raceId -> File object
@@ -1154,7 +1179,7 @@
         // IndexedDBの初期化
         function initDB() {
             return new Promise((resolve, reject) => {
-                const request = indexedDB.open('Mini4WDRaceMemoDB', 1);
+                const request = indexedDB.open('Mini4WDRaceMemoDB', 2);
                 
                 request.onerror = () => {
                     console.error('IndexedDBのオープンに失敗しました');
@@ -1178,6 +1203,10 @@
                     
                     if (!db.objectStoreNames.contains('settings')) {
                         db.createObjectStore('settings', { keyPath: 'key' });
+                    }
+
+                    if (!db.objectStoreNames.contains('groups')) {
+                        db.createObjectStore('groups', { keyPath: 'id' });
                     }
                 };
             });
@@ -1308,6 +1337,7 @@
                 const savedRaces = await loadDataFromDB('races');
                 const savedEvents = await loadDataFromDB('settings', 'events');
                 const savedDefaultSettings = await loadDataFromDB('settings', 'defaultSettings');
+                const savedGroups = await loadDataFromDB('groups');
                 
                 if (savedRaces && savedRaces.length > 0) {
                     races = savedRaces.map(race => {
@@ -1331,9 +1361,13 @@
                 if (savedDefaultSettings && savedDefaultSettings.value) {
                     defaultSettings = savedDefaultSettings.value;
                 }
+
+                if (Array.isArray(savedGroups)) {
+                    groups = savedGroups;
+                }
                 
                 updateEventHistory();
-                renderRaceList();
+                renderGroupList();
             } catch (error) {
                 console.error('データの読み込みに失敗しました:', error);
                 loadDataFromLocalStorage();
@@ -1358,7 +1392,104 @@
             }
             
             updateEventHistory();
+            renderGroupList();
+        }
+
+        // グループ保存/読み込み
+        async function saveGroupToDB(group) {
+            return saveDataToDB('groups', group);
+        }
+
+        function getGroupNameById(id) {
+            if (id === null) return '未分類';
+            const g = groups.find(x => x.id === id);
+            return g ? g.name : '未分類';
+        }
+
+        // グループ一覧描画
+        function renderGroupList() {
+            const groupList = document.getElementById('groupList');
+            if (!groupList) return;
+            groupList.innerHTML = '';
+
+            // 件数集計
+            const counts = new Map();
+            groups.forEach(g => counts.set(g.id, 0));
+            let ungrouped = 0;
+            races.forEach(r => {
+                if (r.groupId) {
+                    counts.set(r.groupId, (counts.get(r.groupId) || 0) + 1);
+                } else {
+                    ungrouped++;
+                }
+            });
+
+            // 未分類（必要なら表示）
+            if (ungrouped > 0 || groups.length === 0) {
+                const li = document.createElement('li');
+                li.className = 'race-item';
+                li.onclick = () => openGroup(null);
+                li.innerHTML = `
+                    <div style="margin-left: 0.5rem;">
+                        <h3>未分類</h3>
+                        <div class="meta">${ungrouped}件</div>
+                    </div>`;
+                groupList.appendChild(li);
+            }
+
+            // 既存グループ
+            groups.forEach(g => {
+                const li = document.createElement('li');
+                li.className = 'race-item';
+                li.onclick = () => openGroup(g.id);
+                const c = counts.get(g.id) || 0;
+                li.innerHTML = `
+                    <div style="margin-left: 0.5rem;">
+                        <h3>${g.name}</h3>
+                        <div class="meta">${c}件</div>
+                    </div>`;
+                groupList.appendChild(li);
+            });
+
+            if (!groupList.children.length) {
+                groupList.innerHTML = `<li style="text-align: center; color: #666; padding: 2rem;">グループがありません<br>「グループを追加」から作成してください</li>`;
+            }
+        }
+
+        function openGroup(groupId) {
+            currentGroupId = groupId === undefined ? null : groupId;
+            const title = document.getElementById('groupTitle');
+            if (title) {
+                title.textContent = getGroupNameById(currentGroupId);
+            }
+            currentTab = 'all';
+            // タブのアクティブ状態を初期化
+            document.querySelectorAll('#groupScreen .tab').forEach((t, i) => {
+                if (i === 0) t.classList.add('active'); else t.classList.remove('active');
+            });
             renderRaceList();
+            showScreen('groupScreen');
+        }
+
+        function showCreateGroupPrompt() {
+            const name = prompt('新しいグループ名');
+            if (!name) return;
+            const trimmed = name.trim();
+            if (!trimmed) return;
+            // 重複チェック（同名OKにする場合はスキップ）
+            if (groups.some(g => g.name === trimmed)) {
+                if (!confirm('同名のグループがあります。作成しますか？')) return;
+            }
+            const group = { id: 'g_' + Date.now().toString(), name: trimmed, createdAt: new Date().toISOString() };
+            groups.push(group);
+            saveGroupToDB(group).then(() => {
+                renderGroupList();
+            });
+        }
+
+        function showNewRaceFormInCurrentGroup() {
+            newRaceGroupId = currentGroupId;
+            showNewRaceForm();
         }
 
         // データをIndexedDBに保存（動画データを除外）
@@ -1649,8 +1780,9 @@
             document.getElementById(screenId).classList.add('active');
         }
 
-        // ホーム画面表示
+        // ホーム画面表示（グループ一覧）
         function showHome() {
+            renderGroupList();
             showScreen('homeScreen');
         }
 
@@ -1710,7 +1842,8 @@
                 startLane: '',
                 coSection: '',
                 impression: '',
-                isFavorite: false
+                isFavorite: false,
+                groupId: newRaceGroupId || null
             };
             
             races.unshift(newRace);
@@ -1726,6 +1859,7 @@
                     prependRaceToList(newRace);
                 }
                 showHome();
+                newRaceGroupId = null;
             } catch (error) {
                 races.shift(); // 保存失敗時は追加したレースを削除
                 alert('データの保存に失敗しました。');
@@ -1823,13 +1957,25 @@
             const raceList = document.getElementById('raceList');
             raceList.innerHTML = '';
             let filteredRaces = races;
+            // グループフィルタ
+            if (currentGroupId === null) {
+                filteredRaces = filteredRaces.filter(r => !r.groupId);
+            } else if (currentGroupId) {
+                filteredRaces = filteredRaces.filter(r => r.groupId === currentGroupId);
+            }
             if (currentTab === 'favorites') {
                 filteredRaces = races.filter(race => race.isFavorite);
+                // フィルタ後にお気に入りをさらにフィルタ
+                if (currentGroupId === null) {
+                    filteredRaces = filteredRaces.filter(r => !r.groupId);
+                } else if (currentGroupId) {
+                    filteredRaces = filteredRaces.filter(r => r.groupId === currentGroupId);
+                }
             }
             if (filteredRaces.length === 0) {
                 const message = currentTab === 'favorites'
                     ? 'お気に入りのレースがありません<br>ハートマークをタップしてお気に入りに追加してください'
-                    : 'まだレースがありません<br>+ボタンから追加してください';
+                    : 'このグループにはまだレースがありません<br>+ボタンから追加してください';
                 raceList.innerHTML = `<li style="text-align: center; color: #666; padding: 2rem;">${message}</li>`;
                 return;
             }
@@ -2132,6 +2278,27 @@
         }
 
         // セッティング編集モーダル表示
+        function populateGroupSelect(selectEl, selectedId) {
+            if (!selectEl) return;
+            selectEl.innerHTML = '';
+            const optNone = document.createElement('option');
+            optNone.value = '';
+            optNone.textContent = '未分類';
+            selectEl.appendChild(optNone);
+            groups.forEach(g => {
+                const o = document.createElement('option');
+                o.value = g.id;
+                o.textContent = g.name;
+                selectEl.appendChild(o);
+            });
+            const optNew = document.createElement('option');
+            optNew.value = '__new__';
+            optNew.textContent = '＋ 新規グループ…';
+            selectEl.appendChild(optNew);
+            selectEl.value = selectedId || '';
+        }
+
+        // セッティング編集モーダル表示
         function showSettingModal(raceId) {
             currentEditRaceId = raceId;
             const race = races.find(r => r.id === raceId);
@@ -2139,6 +2306,24 @@
             if (race) {
                 // 大会選択を更新
                 updateEditEventSelect();
+                // グループ選択を更新
+                const editGroupSelect = document.getElementById('editGroup');
+                populateGroupSelect(editGroupSelect, race.groupId || '');
+                editGroupSelect.onchange = (e) => {
+                    if (e.target.value === '__new__') {
+                        // 新規グループ作成
+                        const name = prompt('新しいグループ名');
+                        if (name && name.trim()) {
+                            const group = { id: 'g_' + Date.now().toString(), name: name.trim(), createdAt: new Date().toISOString() };
+                            groups.push(group);
+                            saveGroupToDB(group).then(() => {
+                                populateGroupSelect(editGroupSelect, group.id);
+                            });
+                        } else {
+                            populateGroupSelect(editGroupSelect, race.groupId || '');
+                        }
+                    }
+                };
                 
                 // 現在の値を設定
                 document.getElementById('editEventName').value = race.eventName || '';
@@ -2178,6 +2363,7 @@
             const gearRatio = document.getElementById('editGearRatio').value;
             const brake = document.getElementById('editBrake').value;
             const remarks = document.getElementById('editRemarks').value;
+            const selectedGroupVal = document.getElementById('editGroup').value;
             
             if (!eventName) {
                 alert('大会名を入力してください');
@@ -2197,6 +2383,7 @@
             race.gearRatio = gearRatio;
             race.brake = brake;
             race.remarks = remarks;
+            race.groupId = selectedGroupVal || null;
             race.updatedAt = new Date().toISOString();
             
             // デフォルト設定も更新
@@ -2213,7 +2400,16 @@
             };
             await saveDefaultSettings();
             await saveRaceToDB(race);
-            updateRaceListItem(race);
+            if (currentGroupId === null || currentGroupId) {
+                // グループ画面からの更新時は所属が変わる可能性あり
+                if ((currentGroupId === null && race.groupId) || (currentGroupId && race.groupId !== currentGroupId)) {
+                    removeRaceFromList(race.id);
+                } else {
+                    updateRaceListItem(race);
+                }
+            } else {
+                updateRaceListItem(race);
+            }
             showRaceDetail(currentEditRaceId);
             closeSettingModal();
         }
@@ -2243,7 +2439,7 @@
             currentTab = tab;
             
             // タブのアクティブ状態を更新
-            document.querySelectorAll('.tab').forEach(tabElement => {
+            document.querySelectorAll('#groupScreen .tab').forEach(tabElement => {
                 tabElement.classList.remove('active');
             });
             event.target.classList.add('active');
