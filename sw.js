@@ -1,5 +1,5 @@
 // sw.js
-const VERSION = 'v1.0.20';
+const VERSION = 'v1.0.21';
 // Service Worker が管理できるスコープの先頭URL（例: https://user.github.io/repo/）
 const BASE_URL = self.registration.scope;
 const CACHE_NAME = `mini4wd-race-memo-${VERSION}`;
