@@ -1137,6 +1137,10 @@
         let draggedElement = null;
         let draggedRaceId = null;
         let isDragging = false;
+        // グループのドラッグ&ドロップ関連
+        let draggedGroupElement = null;
+        let draggedGroupId = null;
+        let isGroupDragging = false;
         
         // スワイプ関連
         let touchStartX = 0;
@@ -1379,6 +1383,18 @@
 
                 if (Array.isArray(savedGroups)) {
                     groups = savedGroups;
+                    // 並び順の安定化: order -> createdAt -> name
+                    groups.sort((a,b) => {
+                        const ao = typeof a.order === 'number' ? a.order : Number.MAX_SAFE_INTEGER;
+                        const bo = typeof b.order === 'number' ? b.order : Number.MAX_SAFE_INTEGER;
+                        if (ao !== bo) return ao - bo;
+                        const ad = a.createdAt || '';
+                        const bd = b.createdAt || '';
+                        if (ad !== bd) return (ad < bd ? -1 : 1);
+                        const an = a.name || '';
+                        const bn = b.name || '';
+                        return an.localeCompare(bn, 'ja');
+                    });
                 }
                 
                 updateEventHistory();
@@ -1442,7 +1458,7 @@
             // 未分類（必要なら表示）
             if (ungrouped > 0 || groups.length === 0) {
                 const li = document.createElement('li');
-                li.className = 'race-item';
+                li.className = 'race-item group-item';
                 li.onclick = () => openGroup(null);
                 li.innerHTML = `
                     <div style="margin-left: 0.5rem;">
@@ -1455,11 +1471,13 @@
             // 既存グループ
             groups.forEach(g => {
                 const li = document.createElement('li');
-                li.className = 'race-item';
+                li.className = 'race-item group-item';
                 li.onclick = () => openGroup(g.id);
+                li.dataset.groupId = g.id;
                 const c = counts.get(g.id) || 0;
                 li.innerHTML = `
-                    <div style="margin-left: 0.5rem;">
+                    <div class="drag-handle" onmousedown="startGroupDrag(event, '${g.id}')" ontouchstart="startGroupDrag(event, '${g.id}')"></div>
+                    <div style="margin-left: 3rem;">
                         <h3>${g.name}</h3>
                         <div class="meta">${c}件</div>
                     </div>`;
@@ -1495,7 +1513,7 @@
             if (groups.some(g => g.name === trimmed)) {
                 if (!confirm('同名のグループがあります。作成しますか？')) return;
             }
-            const group = { id: 'g_' + Date.now().toString(), name: trimmed, createdAt: new Date().toISOString() };
+            const group = { id: 'g_' + Date.now().toString(), name: trimmed, createdAt: new Date().toISOString(), order: groups.length };
             groups.push(group);
             saveGroupToDB(group).then(() => {
                 renderGroupList();
@@ -1505,6 +1523,127 @@
         function showNewRaceFormInCurrentGroup() {
             newRaceGroupId = currentGroupId;
             showNewRaceForm();
+        }
+
+        // グループの並び替え（保存）
+        async function saveGroupsOrderToDB() {
+            try {
+                // 連番の order を振りなおす
+                groups.forEach((g, i) => { g.order = i; });
+                await saveDataToDB('groups', groups);
+            } catch (e) {
+                console.warn('グループ順の保存に失敗:', e);
+            }
+        }
+
+        // グループのドラッグ開始
+        function startGroupDrag(event, groupId) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            draggedGroupId = groupId;
+            draggedGroupElement = event.target.closest('.group-item');
+            isGroupDragging = true;
+
+            const startY = (event.type === 'touchstart') ? event.touches[0].clientY : event.clientY;
+            const startX = (event.type === 'touchstart') ? event.touches[0].clientX : event.clientX;
+
+            const placeholder = draggedGroupElement.cloneNode(true);
+            placeholder.classList.add('drag-placeholder');
+            placeholder.classList.remove('dragging');
+            placeholder.style.height = draggedGroupElement.offsetHeight + 'px';
+            draggedGroupElement.parentNode.insertBefore(placeholder, draggedGroupElement);
+
+            draggedGroupElement.classList.add('dragging');
+            draggedGroupElement.style.position = 'fixed';
+            draggedGroupElement.style.left = startX - draggedGroupElement.offsetWidth / 2 + 'px';
+            draggedGroupElement.style.top = startY - 30 + 'px';
+            draggedGroupElement.style.width = draggedGroupElement.offsetWidth + 'px';
+            draggedGroupElement.style.pointerEvents = 'none';
+
+            const moveHandler = (e) => {
+                if (!isGroupDragging) return;
+                e.preventDefault();
+                const clientY = (e.type === 'touchmove') ? e.touches[0].clientY : e.clientY;
+                const clientX = (e.type === 'touchmove') ? e.touches[0].clientX : e.clientX;
+
+                draggedGroupElement.style.left = clientX - draggedGroupElement.offsetWidth / 2 + 'px';
+                draggedGroupElement.style.top = clientY - 30 + 'px';
+
+                const items = Array.from(document.querySelectorAll('#groupList .group-item:not(.dragging)'));
+                let targetIndex = -1;
+                for (let i = 0; i < items.length; i++) {
+                    const rect = items[i].getBoundingClientRect();
+                    if (clientY < rect.top + rect.height / 2) {
+                        targetIndex = i;
+                        break;
+                    }
+                }
+                const currentPlaceholder = document.querySelector('#groupList .drag-placeholder');
+                if (currentPlaceholder) {
+                    if (targetIndex === -1) {
+                        items[items.length - 1].parentNode.appendChild(currentPlaceholder);
+                    } else if (items[targetIndex] !== currentPlaceholder) {
+                        items[targetIndex].parentNode.insertBefore(currentPlaceholder, items[targetIndex]);
+                    }
+                }
+            };
+
+            const endHandler = () => {
+                if (!isGroupDragging) return;
+                isGroupDragging = false;
+
+                const placeholder = document.querySelector('#groupList .drag-placeholder');
+                let targetGroupId = null;
+                if (placeholder && placeholder.nextElementSibling) {
+                    targetGroupId = placeholder.nextElementSibling.dataset.groupId || null;
+                } else if (placeholder && placeholder.previousElementSibling) {
+                    const siblings = Array.from(placeholder.parentNode.querySelectorAll('#groupList .group-item:not(.drag-placeholder)'));
+                    const lastSibling = siblings[siblings.length - 1];
+                    if (lastSibling) {
+                        targetGroupId = lastSibling.dataset.groupId || null;
+                    }
+                }
+
+                draggedGroupElement.classList.remove('dragging');
+                draggedGroupElement.style.position = '';
+                draggedGroupElement.style.left = '';
+                draggedGroupElement.style.top = '';
+                draggedGroupElement.style.width = '';
+                draggedGroupElement.style.pointerEvents = '';
+
+                if (placeholder) placeholder.remove();
+
+                if (targetGroupId && targetGroupId !== draggedGroupId) {
+                    reorderGroups(draggedGroupId, targetGroupId);
+                } else {
+                    renderGroupList();
+                }
+
+                draggedGroupElement = null;
+                draggedGroupId = null;
+
+                document.removeEventListener('mousemove', moveHandler);
+                document.removeEventListener('mouseup', endHandler);
+                document.removeEventListener('touchmove', moveHandler);
+                document.removeEventListener('touchend', endHandler);
+            };
+
+            document.addEventListener('mousemove', moveHandler);
+            document.addEventListener('mouseup', endHandler);
+            document.addEventListener('touchmove', moveHandler);
+            document.addEventListener('touchend', endHandler);
+        }
+
+        // グループの配列順を変更して保存
+        async function reorderGroups(draggedId, targetId) {
+            const di = groups.findIndex(g => g.id === draggedId);
+            const ti = groups.findIndex(g => g.id === targetId);
+            if (di === -1 || ti === -1 || di === ti) return;
+            const dragged = groups.splice(di, 1)[0];
+            groups.splice(ti, 0, dragged);
+            renderGroupList();
+            await saveGroupsOrderToDB();
         }
 
         // データをIndexedDBに保存（動画データを除外）
