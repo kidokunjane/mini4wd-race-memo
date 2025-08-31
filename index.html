@@ -1128,6 +1128,7 @@
         let groups = [];
         let currentGroupId = null; // null: 未分類, otherwise group.id
         let newRaceGroupId = null; // 新規レース作成時に割り当てたいグループID
+        let ungroupedOrder = [];
         
         // 動画ファイル管理
         let videoFiles = new Map(); // raceId -> File object
@@ -1356,6 +1357,7 @@
                 const savedRaces = await loadDataFromDB('races');
                 const savedEvents = await loadDataFromDB('settings', 'events');
                 const savedDefaultSettings = await loadDataFromDB('settings', 'defaultSettings');
+                const savedUngroupedOrder = await loadDataFromDB('settings', 'ungroupedOrder');
                 const savedGroups = await loadDataFromDB('groups');
                 
                 if (savedRaces && savedRaces.length > 0) {
@@ -1395,6 +1397,10 @@
                         const bn = b.name || '';
                         return an.localeCompare(bn, 'ja');
                     });
+                }
+
+                if (savedUngroupedOrder && Array.isArray(savedUngroupedOrder.value)) {
+                    ungroupedOrder = savedUngroupedOrder.value;
                 }
                 
                 updateEventHistory();
@@ -1513,9 +1519,10 @@
             if (groups.some(g => g.name === trimmed)) {
                 if (!confirm('同名のグループがあります。作成しますか？')) return;
             }
-            const group = { id: 'g_' + Date.now().toString(), name: trimmed, createdAt: new Date().toISOString(), order: groups.length };
-            groups.push(group);
-            saveGroupToDB(group).then(() => {
+            const group = { id: 'g_' + Date.now().toString(), name: trimmed, createdAt: new Date().toISOString(), order: 0, raceOrder: [] };
+            groups.unshift(group);
+            // 連番を振り直して保存
+            saveGroupsOrderToDB().then(() => {
                 renderGroupList();
             });
         }
@@ -1533,6 +1540,14 @@
                 await saveDataToDB('groups', groups);
             } catch (e) {
                 console.warn('グループ順の保存に失敗:', e);
+            }
+        }
+
+        async function saveUngroupedOrderToDB() {
+            try {
+                await saveDataToDB('settings', { key: 'ungroupedOrder', value: ungroupedOrder });
+            } catch (e) {
+                console.warn('未分類順の保存に失敗:', e);
             }
         }
 
@@ -2004,6 +2019,20 @@
             
             try {
                 await saveRaceToDB(newRace);
+                // グループ順へ反映して保存
+                if (newRace.groupId) {
+                    const g = groups.find(x => x.id === newRace.groupId);
+                    if (g) {
+                        if (!Array.isArray(g.raceOrder)) g.raceOrder = [];
+                        // 先頭に追加
+                        g.raceOrder = [newRace.id, ...g.raceOrder.filter(id => id !== newRace.id)];
+                        await saveGroupToDB(g);
+                    }
+                } else {
+                    // 未分類の順序更新（先頭）
+                    ungroupedOrder = [newRace.id, ...ungroupedOrder.filter(id => id !== newRace.id)];
+                    await saveUngroupedOrderToDB();
+                }
                 // 差分描画: 現在のタブに応じて先頭に追加
                 if (currentTab === 'favorites') {
                     if (newRace.isFavorite) {
@@ -2125,6 +2154,22 @@
                 } else if (currentGroupId) {
                     filteredRaces = filteredRaces.filter(r => r.groupId === currentGroupId);
                 }
+            }
+            // 並び順: グループの raceOrder / 未分類の ungroupedOrder を優先、無ければ作成日時降順
+            const orderArr = (currentGroupId === null)
+                ? ungroupedOrder
+                : (currentGroupId ? ((groups.find(g => g.id === currentGroupId) || {}).raceOrder || []) : []);
+            if (orderArr && orderArr.length) {
+                const indexMap = new Map(orderArr.map((id, i) => [id, i]));
+                filteredRaces.sort((a, b) => {
+                    const ia = indexMap.has(a.id) ? indexMap.get(a.id) : Number.MAX_SAFE_INTEGER;
+                    const ib = indexMap.has(b.id) ? indexMap.get(b.id) : Number.MAX_SAFE_INTEGER;
+                    if (ia !== ib) return ia - ib;
+                    // fallback: 新しいもの先
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                });
+            } else {
+                filteredRaces.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             }
             if (filteredRaces.length === 0) {
                 const message = currentTab === 'favorites'
@@ -2415,7 +2460,25 @@
             
             // 動画URLをクリーンアップ
             removeVideoUrl(raceId);
+            const removed = races.find(r => r.id === raceId);
             races = races.filter(race => race.id !== raceId);
+            // 順序からも削除
+            try {
+                if (removed) {
+                    if (removed.groupId) {
+                        const g = groups.find(x => x.id === removed.groupId);
+                        if (g && Array.isArray(g.raceOrder)) {
+                            g.raceOrder = g.raceOrder.filter(id => id !== raceId);
+                            await saveGroupToDB(g);
+                        }
+                    } else {
+                        ungroupedOrder = ungroupedOrder.filter(id => id !== raceId);
+                        await saveUngroupedOrderToDB();
+                    }
+                }
+            } catch (e) {
+                console.warn('順序からのレース削除に失敗:', e);
+            }
             await deleteRaceFromDB(raceId);
             removeRaceFromList(raceId);
             showHome();
@@ -2557,6 +2620,7 @@
             await addEventToHistory(eventName);
             
             // レースデータを更新
+            const prevGroupId = race.groupId || null;
             race.eventName = eventName;
             race.voltage = voltage;
             race.checkerSpeed = checkerSpeed;
@@ -2582,6 +2646,38 @@
                 remarks
             };
             await saveDefaultSettings();
+            // グループが変更された場合、順序リストを更新
+            try {
+                if (prevGroupId !== race.groupId) {
+                    // 旧グループから除去
+                    if (prevGroupId) {
+                        const oldG = groups.find(g => g.id === prevGroupId);
+                        if (oldG && Array.isArray(oldG.raceOrder)) {
+                            oldG.raceOrder = oldG.raceOrder.filter(id => id !== race.id);
+                            await saveGroupToDB(oldG);
+                        }
+                    } else {
+                        // 未分類から除去
+                        ungroupedOrder = ungroupedOrder.filter(id => id !== race.id);
+                        await saveUngroupedOrderToDB();
+                    }
+                    // 新グループに先頭追加
+                    if (race.groupId) {
+                        const newG = groups.find(g => g.id === race.groupId);
+                        if (newG) {
+                            if (!Array.isArray(newG.raceOrder)) newG.raceOrder = [];
+                            newG.raceOrder = [race.id, ...newG.raceOrder.filter(id => id !== race.id)];
+                            await saveGroupToDB(newG);
+                        }
+                    } else {
+                        ungroupedOrder = [race.id, ...ungroupedOrder.filter(id => id !== race.id)];
+                        await saveUngroupedOrderToDB();
+                    }
+                }
+            } catch (e) {
+                console.warn('グループ順更新エラー:', e);
+            }
+
             await saveRaceToDB(race);
             if (currentGroupId === null || currentGroupId) {
                 // グループ画面からの更新時は所属が変わる可能性あり
@@ -2798,8 +2894,56 @@
             
             // UIを即座に更新
             renderRaceList();
-            
-            // 並び順の永続化は行わない（パフォーマンス優先）
+
+            // 並び順の永続化（グループ or 未分類単位で保存）
+            try {
+                if (currentGroupId === null) {
+                    // 未分類の順序を更新
+                    // まず表示対象の未分類リストを取得
+                    const ids = races.filter(r => !r.groupId).map(r => r.id);
+                    // drag と target の相対位置に基づき ungroupedOrder を更新
+                    if (!Array.isArray(ungroupedOrder) || ungroupedOrder.length === 0) {
+                        ungroupedOrder = ids.slice();
+                    } else {
+                        const arr = ungroupedOrder.filter(id => ids.includes(id));
+                        const di = arr.indexOf(draggedId);
+                        const ti = arr.indexOf(targetId);
+                        if (di !== -1 && ti !== -1) {
+                            arr.splice(di, 1);
+                            arr.splice(ti, 0, draggedId);
+                        } else {
+                            // フォールバック: 現在の表示順で上書き
+                            arr.length = 0;
+                            Array.prototype.push.apply(arr, ids);
+                        }
+                        ungroupedOrder = arr;
+                    }
+                    await saveUngroupedOrderToDB();
+                } else if (currentGroupId) {
+                    const group = groups.find(g => g.id === currentGroupId);
+                    if (group) {
+                        const ids = races.filter(r => r.groupId === currentGroupId).map(r => r.id);
+                        if (!Array.isArray(group.raceOrder) || group.raceOrder.length === 0) {
+                            group.raceOrder = ids.slice();
+                        } else {
+                            const arr = group.raceOrder.filter(id => ids.includes(id));
+                            const di = arr.indexOf(draggedId);
+                            const ti = arr.indexOf(targetId);
+                            if (di !== -1 && ti !== -1) {
+                                arr.splice(di, 1);
+                                arr.splice(ti, 0, draggedId);
+                            } else {
+                                arr.length = 0;
+                                Array.prototype.push.apply(arr, ids);
+                            }
+                            group.raceOrder = arr;
+                        }
+                        await saveGroupToDB(group);
+                    }
+                }
+            } catch (e) {
+                console.warn('レース順保存エラー:', e);
+            }
         }
 
         // スワイプイベントリスナーを追加
