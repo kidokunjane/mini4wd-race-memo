@@ -502,7 +502,7 @@
             right: 0;
             bottom: 0;
             background: rgba(0,0,0,0.5);
-            z-index: 1000; /* ヘッダーより後ろ（ヘッダーはstickyで上） */
+            z-index: 3000; /* ヘッダーも含めて全体をオーバーレイで覆う */
             padding-top: var(--header-offset);
         }
 
@@ -512,6 +512,15 @@
             border-radius: 12px;
             max-height: calc(100vh - var(--header-offset) - 4rem);
             overflow-y: auto;
+        }
+
+        /* モーダル表示時にヘッダーや背景を非アクティブ化 */
+        body.modal-open .header {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        body.modal-open .screen {
+            pointer-events: none;
         }
 
         .modal-header {
@@ -2573,6 +2582,7 @@
             }
             
             document.getElementById('resultModal').style.display = 'block';
+            updateModalOpenClass();
         }
 
         // レース結果追加モーダルを閉じる
@@ -2581,6 +2591,7 @@
             document.getElementById('raceVideo').value = '';
             document.getElementById('videoPreview').innerHTML = '';
             currentRaceId = null;
+            updateModalOpenClass();
         }
 
         // レース結果保存
@@ -2776,12 +2787,14 @@
             }
             
             document.getElementById('settingModal').style.display = 'block';
+            updateModalOpenClass();
         }
 
         // セッティング編集モーダルを閉じる
         function closeSettingModal() {
             document.getElementById('settingModal').style.display = 'none';
             currentEditRaceId = null;
+            updateModalOpenClass();
         }
 
 
@@ -3276,11 +3289,13 @@
             const modalPhoto = document.getElementById('modalPhoto');
             modalPhoto.src = photoSrc;
             modal.classList.add('show');
+            updateModalOpenClass();
         }
         
         function closePhotoModal() {
             const modal = document.getElementById('photoModal');
             modal.classList.remove('show');
+            updateModalOpenClass();
         }
         
         // モーダル背景をクリックして閉じる
@@ -3289,6 +3304,15 @@
                 closePhotoModal();
             }
         });
+
+        function updateModalOpenClass() {
+            const settingOpen = document.getElementById('settingModal') && document.getElementById('settingModal').style.display === 'block';
+            const resultOpen = document.getElementById('resultModal') && document.getElementById('resultModal').style.display === 'block';
+            const historyOpen = document.getElementById('historyModal') && document.getElementById('historyModal').style.display === 'block';
+            const photoOpen = document.getElementById('photoModal') && document.getElementById('photoModal').classList.contains('show');
+            const anyOpen = !!(settingOpen || resultOpen || historyOpen || photoOpen);
+            document.body.classList.toggle('modal-open', anyOpen);
+        }
         
         // Service Worker バージョン情報を取得
         async function getServiceWorkerVersion() {
@@ -3361,10 +3385,12 @@
                 pre.textContent = '変更履歴を読み込めませんでした。';
             }
             modal.style.display = 'block';
+            updateModalOpenClass();
         }
 
         function closeHistoryModal() {
             document.getElementById('historyModal').style.display = 'none';
+            updateModalOpenClass();
         }
 
         document.addEventListener('DOMContentLoaded', function() {
