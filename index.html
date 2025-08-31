@@ -452,6 +452,21 @@
             border-radius: 6px;
         }
 
+        /* グループ削除ボタン */
+        .group-delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(220, 53, 69, 0.08);
+            color: #dc3545;
+            border: 1px solid #f5c6cb;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .group-delete-btn:hover { background: rgba(220, 53, 69, 0.15); }
+
 
         .add-event-btn {
             position: fixed;
@@ -1579,7 +1594,8 @@
                     <div style="margin-left: 3rem;">
                         <h3>${g.name}</h3>
                         <div class="meta">${c}件</div>
-                    </div>`;
+                    </div>
+                    <button class="group-delete-btn" onclick="deleteGroup('${g.id}', event)">削除</button>`;
                 groupList.appendChild(li);
             });
 
@@ -1707,6 +1723,46 @@
                 await saveDataToDB('settings', { key: 'ungroupedOrder', value: ungroupedOrder });
             } catch (e) {
                 console.warn('未分類順の保存に失敗:', e);
+            }
+        }
+
+        // グループ削除（レースは未分類へ移動）
+        async function deleteGroup(groupId, ev) {
+            if (ev) ev.stopPropagation();
+            const g = groups.find(x => x.id === groupId);
+            if (!g) return;
+            if (!confirm('このグループを削除しますか？\nグループ内のレースは未分類に移動します。')) return;
+
+            try {
+                // 該当グループのレースを未分類へ
+                const moved = races.filter(r => r.groupId === groupId);
+                const movedIds = [];
+                for (const r of moved) {
+                    r.groupId = null;
+                    r.updatedAt = new Date().toISOString();
+                    movedIds.push(r.id);
+                    await saveRaceToDB(r);
+                }
+
+                // 未分類の順序に追加（重複排除して末尾に追加）
+                if (!Array.isArray(ungroupedOrder)) ungroupedOrder = [];
+                const base = ungroupedOrder.filter(id => !movedIds.includes(id));
+                ungroupedOrder = base.concat(movedIds);
+                await saveUngroupedOrderToDB();
+
+                // グループ配列から削除し、順序を保存
+                groups = groups.filter(x => x.id !== groupId);
+                await saveGroupsOrderToDB();
+
+                // UI更新
+                if (currentGroupId === groupId) {
+                    showHome();
+                } else {
+                    renderGroupList();
+                }
+            } catch (e) {
+                alert('グループの削除に失敗しました');
+                console.error(e);
             }
         }
 
