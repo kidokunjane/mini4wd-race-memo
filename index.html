@@ -1259,16 +1259,31 @@
             });
         }
 
-        // 増分保存用ユーティリティ
+        // 増分保存用ユーティリティ（動画保持の安全策込み）
         async function saveRaceToDB(race) {
             if (!db) await initDB();
             const raceData = { ...race };
-            if (race.id && videoFiles.has(race.id)) {
-                raceData.videoBlob = videoFiles.get(race.id);
-                raceData.hasVideo = true;
-            } else if (race.raceVideo) {
-                raceData.hasVideo = true;
-                delete raceData.raceVideo;
+            try {
+                if (race.id && videoFiles.has(race.id)) {
+                    // メモリに動画がある場合はそれを保存
+                    raceData.videoBlob = videoFiles.get(race.id);
+                    raceData.hasVideo = true;
+                } else if (race.hasVideo) {
+                    // 動画フラグがあるがメモリに無い場合、既存レコードから復元して保持
+                    const existingAll = await loadDataFromDB('races');
+                    const existing = (existingAll || []).find(r => r.id === race.id);
+                    if (existing && existing.videoBlob) {
+                        raceData.videoBlob = existing.videoBlob;
+                        raceData.hasVideo = true;
+                    } else {
+                        // 何も無ければフラグだけ維持
+                        raceData.hasVideo = !!raceData.hasVideo;
+                    }
+                }
+                // DBには ObjectURL 文字列は保存しない（無駄なので）
+                if ('raceVideo' in raceData) delete raceData.raceVideo;
+            } catch (e) {
+                console.warn('動画保持処理で例外:', e);
             }
             return saveDataToDB('races', raceData);
         }
@@ -2129,6 +2144,35 @@
             `;
             
             showScreen('detailScreen');
+
+            // もし hasVideo だが URL が無い場合、IndexedDB から復元を試みる
+            if (!videoUrl && race.hasVideo) {
+                ensureVideoAvailable(race.id);
+            }
+        }
+
+        // IndexedDB から動画を復元して再度描画
+        async function ensureVideoAvailable(raceId) {
+            try {
+                if (!db) await initDB();
+                const records = await loadDataFromDB('races');
+                const rec = (records || []).find(r => r.id === raceId);
+                if (rec && rec.videoBlob) {
+                    const objectUrl = URL.createObjectURL(rec.videoBlob);
+                    videoFiles.set(raceId, rec.videoBlob);
+                    videoUrls.set(raceId, objectUrl);
+                    const race = races.find(r => r.id === raceId);
+                    if (race) race.raceVideo = objectUrl;
+                    // 再描画
+                    if (document.getElementById('detailScreen').classList.contains('active')) {
+                        showRaceDetail(raceId);
+                    } else {
+                        updateRaceListItem(races.find(r => r.id === raceId));
+                    }
+                }
+            } catch (e) {
+                console.warn('動画復元に失敗:', e);
+            }
         }
 
         // レース結果追加モーダル表示
