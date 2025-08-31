@@ -98,6 +98,36 @@
             cursor: pointer;
             text-decoration: underline;
         }
+        .header-actions { display: flex; align-items: center; gap: 8px; }
+        .header-link {
+            font-size: 0.85rem;
+            color: #ff3b30;
+            cursor: pointer;
+            user-select: none;
+        }
+        .favorite-icon {
+            width: 24px;
+            height: 24px;
+            color: #ff3b30;
+        }
+        .header-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border: 1px solid #ff3b30;
+            background: rgba(255, 59, 48, 0.08);
+            color: #ff3b30;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .header-btn:hover { background: rgba(255, 59, 48, 0.15); }
+        .header-btn:active { background: rgba(255, 59, 48, 0.2); }
+        .header-btn:focus { outline: none; box-shadow: 0 0 0 2px rgba(255,59,48,0.25); }
+        .header-btn svg { width: 18px; height: 18px; }
 
         .container {
             max-width: 600px;
@@ -434,9 +464,26 @@
         }
 
         .add-event-btn:hover {
-            transform: scale(1.1) rotate(90deg);
+            transform: scale(1.06);
             box-shadow: 0 8px 30px rgba(0, 122, 255, 0.5);
             background: #0056CC;
+        }
+
+        /* テキスト付きFAB */
+        .add-event-btn.fab-text {
+            width: auto;
+            height: 56px;
+            border-radius: 28px;
+            padding: 0 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .add-event-btn.fab-text .icon {
+            font-size: 28px;
+            line-height: 1;
         }
 
         .modal {
@@ -751,6 +798,12 @@
             font-weight: 600;
         }
 
+        /* 改行を反映するためのユーティリティ */
+        .pre-wrap {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
         .photo-modal {
             display: none;
             position: fixed;
@@ -797,6 +850,11 @@
 <body>
     <div class="safe-area">
         <div class="header">
+            <div id="backButton" class="home-icon" onclick="goBack()" title="戻る">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </div>
             <div class="home-icon" onclick="showHome()" title="ホームに戻る">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -804,38 +862,51 @@
                 </svg>
             </div>
             <h1>ミニ四駆レースメモ</h1>
-            <div class="version-info" id="versionInfo" title="変更履歴を表示">Loading...</div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="showFavorites()" title="お気に入り">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span>お気に入り</span>
+                </button>
+                <div class="version-info" id="versionInfo" title="変更履歴を表示">Loading...</div>
+            </div>
         </div>
 
     <!-- トップ画面（グループ一覧） -->
     <div id="homeScreen" class="screen active">
+        <div class="tabs">
+            <button class="tab active">グループ一覧</button>
+        </div>
         <div class="container">
-            <div class="card" style="margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
-                <h2 style="font-size: 1.1rem;">グループ</h2>
-                <button class="btn btn-secondary" onclick="showCreateGroupPrompt()">グループを追加</button>
-            </div>
             <ul id="groupList" class="race-list">
                 <!-- グループアイテムがここに追加される -->
             </ul>
         </div>
-        <button class="add-event-btn" title="グループを追加" onclick="showCreateGroupPrompt()">+</button>
+        <button id="homeAddBtn" class="add-event-btn fab-text" title="グループを追加" onclick="showCreateGroupPrompt()"><span class="icon">+</span><span class="label">グループ追加</span></button>
+    </div>
+
+    <!-- お気に入り一覧画面（全体） -->
+    <div id="favoritesScreen" class="screen">
+        <div class="tabs">
+            <button class="tab active">お気に入り</button>
+        </div>
+        <div class="container">
+            <ul id="favoritesList" class="race-list"></ul>
+        </div>
     </div>
 
     <!-- グループ内のレース一覧画面 -->
     <div id="groupScreen" class="screen">
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('all')">全て</button>
-            <button class="tab" onclick="switchTab('favorites')">お気に入り</button>
+            <button id="groupTabTitle" class="tab active" onclick="switchTab('all')">グループ</button>
         </div>
         <div class="container">
-            <div class="card" style="margin-bottom: 0.75rem;">
-                <h2 id="groupTitle" style="font-size: 1.1rem;">グループ</h2>
-            </div>
             <ul id="raceList" class="race-list">
                 <!-- レースアイテムがここに追加される -->
             </ul>
         </div>
-        <button class="add-event-btn" title="このグループにレース追加" onclick="showNewRaceFormInCurrentGroup()">+</button>
+        <button class="add-event-btn fab-text" title="このグループにレース追加" onclick="showNewRaceFormInCurrentGroup()"><span class="icon">+</span><span class="label">レース追加</span></button>
     </div>
 
     <!-- 新規レース登録画面 -->
@@ -870,7 +941,7 @@
 
                     <div class="form-group">
                         <label for="voltage">電圧</label>
-                        <input type="number" id="voltage" step="0.1" placeholder="例: 3.0">
+                        <input type="number" id="voltage" step="0.01" placeholder="例: 3.00">
                     </div>
 
                     <div class="form-group">
@@ -1030,7 +1101,7 @@
 
                 <div class="form-group">
                     <label for="editVoltage">電圧</label>
-                    <input type="number" id="editVoltage" step="0.1" placeholder="例: 3.0">
+                    <input type="number" id="editVoltage" step="0.01" placeholder="例: 3.00">
                 </div>
 
                 <div class="form-group">
@@ -1128,7 +1199,12 @@
         let groups = [];
         let currentGroupId = null; // null: 未分類, otherwise group.id
         let newRaceGroupId = null; // 新規レース作成時に割り当てたいグループID
+        let shouldReturnToGroupAfterAdd = false; // 追加後にグループ画面へ戻るか
+        let postAddReturnGroupId = null; // 戻る対象のグループID（nullは未分類）
         let ungroupedOrder = [];
+        // 戻るボタン用の簡易履歴
+        let navStack = [];
+        // ホーム画面のタブは廃止。ヘッダーのハートからお気に入り画面へ。
         
         // 動画ファイル管理
         let videoFiles = new Map(); // raceId -> File object
@@ -1491,15 +1567,79 @@
             });
 
             if (!groupList.children.length) {
-                groupList.innerHTML = `<li style="text-align: center; color: #666; padding: 2rem;">グループがありません<br>「グループを追加」から作成してください</li>`;
+                groupList.innerHTML = `<li style="text-align: center; color: #666; padding: 2rem;">グループがありません<br>右下の「グループ追加」から作成してください</li>`;
             }
+        }
+
+        // お気に入り一覧描画（全体）
+        function renderFavoritesList() {
+            const list = document.getElementById('favoritesList');
+            if (!list) return;
+            list.innerHTML = '';
+            const favs = races.filter(r => r.isFavorite);
+            if (favs.length === 0) {
+                list.innerHTML = `<li style="text-align: center; color: #666; padding: 2rem;">お気に入りのレースがありません<br>ハートマークをタップしてお気に入りに追加してください</li>`;
+                return;
+            }
+            favs.sort((a,b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+            favs.forEach(race => {
+                const li = document.createElement('li');
+                let raceItemClass = 'race-item';
+                if (race.raceRank === '1位') raceItemClass += ' rank-1';
+                else if (race.raceRank === '2位') raceItemClass += ' rank-2';
+                else if (race.raceRank === '3位') raceItemClass += ' rank-3';
+                li.className = raceItemClass;
+                li.dataset.raceId = race.id;
+                li.onclick = (e) => {
+                    if (!isSwiping && !isDragging) {
+                        showRaceDetail(race.id);
+                    }
+                };
+                const photos = race.photos.length > 0
+                    ? `<div class=\"photos\">${race.photos.slice(0, 3).map(photo => `<img loading=\"lazy\" src=\"${photo}\" alt=\"マシン写真\">`).join('')}</div>`
+                    : '';
+                const raceTimeInfo = race.raceTime ? `<br><span class=\"race-time-highlight\">タイム: ${race.raceTime}秒</span>` : '';
+                const raceRankInfo = race.raceRank ? ` | 順位: ${race.raceRank}` : '';
+                const updatedInfo = race.updatedAt && race.updatedAt !== race.createdAt ? ` | 更新: ${formatDateTime(race.updatedAt)}` : '';
+                let rankBadge = '';
+                if (race.raceRank) {
+                    let badgeClass = 'rank-other';
+                    let badgeText = race.raceRank;
+                    if (race.raceRank === '1位') { badgeClass = 'rank-1'; badgeText = '🏆'; }
+                    else if (race.raceRank === '2位') { badgeClass = 'rank-2'; badgeText = '🥈'; }
+                    else if (race.raceRank === '3位') { badgeClass = 'rank-3'; badgeText = '🥉'; }
+                    else if (race.raceRank === 'CO') { badgeClass = 'rank-other'; badgeText = 'CO'; }
+                    else { badgeText = race.raceRank.replace('位', ''); }
+                    rankBadge = `<div class=\"rank-badge ${badgeClass}\">${badgeText}</div>`;
+                }
+                li.innerHTML = `
+                    ${rankBadge}
+                    <button class=\"favorite-btn ${race.isFavorite ? 'favorited' : 'not-favorited'}\" onclick=\"toggleFavorite('${race.id}', event)\">${race.isFavorite ? '❤️' : '🤍'}</button>
+                    <div style=\"margin-left: 3rem;\">
+                        <h3>${race.eventName}</h3>
+                        <div class=\"meta\">
+                            ${race.voltage ? `電圧: ${race.voltage}V` : ''}
+                            ${race.checkerSpeed ? ` | チェッカー: ${race.checkerSpeed}` : ''}
+                            ${raceTimeInfo}${raceRankInfo}
+                            <br>作成: ${formatDateTime(race.createdAt)}${updatedInfo}
+                            ${race.groupId ? ` | グループ: ${getGroupNameById(race.groupId)}` : ' | グループ: 未分類'}
+                        </div>
+                        ${photos}
+                    </div>`;
+                list.appendChild(li);
+            });
+        }
+
+        function showFavorites() {
+            renderFavoritesList();
+            showScreen('favoritesScreen');
         }
 
         function openGroup(groupId) {
             currentGroupId = groupId === undefined ? null : groupId;
-            const title = document.getElementById('groupTitle');
-            if (title) {
-                title.textContent = getGroupNameById(currentGroupId);
+            const tabTitle = document.getElementById('groupTabTitle');
+            if (tabTitle) {
+                tabTitle.textContent = getGroupNameById(currentGroupId);
             }
             currentTab = 'all';
             // タブのアクティブ状態を初期化
@@ -1529,6 +1669,8 @@
 
         function showNewRaceFormInCurrentGroup() {
             newRaceGroupId = currentGroupId;
+            shouldReturnToGroupAfterAdd = true;
+            postAddReturnGroupId = currentGroupId;
             showNewRaceForm();
         }
 
@@ -1941,12 +2083,48 @@
             showScreen('newRaceScreen');
         }
 
-        // 画面切り替え
-        function showScreen(screenId) {
+        // 画面切り替え（簡易履歴付き）
+        function showScreen(screenId, skipHistory = false) {
+            const current = document.querySelector('.screen.active');
+            const currentId = current ? current.id : null;
+            if (!skipHistory && currentId && currentId !== screenId) {
+                navStack.push(currentId);
+                if (navStack.length > 50) navStack.shift();
+            }
             document.querySelectorAll('.screen').forEach(screen => {
                 screen.classList.remove('active');
             });
             document.getElementById(screenId).classList.add('active');
+            updateBackButtonVisibility();
+        }
+
+        function goBack() {
+            // モーダルが開いていれば優先的に閉じる
+            const settingModal = document.getElementById('settingModal');
+            if (settingModal && settingModal.style.display === 'block') { closeSettingModal(); return; }
+            const resultModal = document.getElementById('resultModal');
+            if (resultModal && resultModal.style.display === 'block') { closeResultModal(); return; }
+            const historyModal = document.getElementById('historyModal');
+            if (historyModal && historyModal.style.display === 'block') { closeHistoryModal(); return; }
+
+            const prev = navStack.pop();
+            if (prev) {
+                showScreen(prev, true);
+            } else {
+                showHome();
+            }
+        }
+
+        function updateBackButtonVisibility() {
+            const back = document.getElementById('backButton');
+            const active = document.querySelector('.screen.active');
+            if (!back || !active) return;
+            // ホーム（トップ）では非表示、それ以外では表示
+            if (active.id === 'homeScreen') {
+                back.style.visibility = 'hidden';
+            } else {
+                back.style.visibility = 'visible';
+            }
         }
 
         // ホーム画面表示（グループ一覧）
@@ -2041,8 +2219,14 @@
                 } else {
                     prependRaceToList(newRace);
                 }
-                showHome();
+                if (shouldReturnToGroupAfterAdd) {
+                    openGroup(postAddReturnGroupId);
+                } else {
+                    showHome();
+                }
                 newRaceGroupId = null;
+                shouldReturnToGroupAfterAdd = false;
+                postAddReturnGroupId = null;
             } catch (error) {
                 races.shift(); // 保存失敗時は追加したレースを削除
                 alert('データの保存に失敗しました。');
@@ -2262,7 +2446,7 @@
                     <div class="detail-setting-icon" style="background: #ffebee; color: #d32f2f;">🛑</div>
                     <div class="detail-setting-content">
                         <div class="detail-setting-label">ブレーキ</div>
-                        <div class="detail-setting-value">${race.brake || '未設定'}</div>
+                        <div class="detail-setting-value pre-wrap">${race.brake || '未設定'}</div>
                     </div>
                 </div>
                 
@@ -2270,7 +2454,7 @@
                     <div class="detail-setting-icon" style="background: #e8eaf6; color: #3f51b5;">📝</div>
                     <div class="detail-setting-content">
                         <div class="detail-setting-label">備考</div>
-                        <div class="detail-setting-value">${race.remarks || '未設定'}</div>
+                        <div class="detail-setting-value pre-wrap">${race.remarks || '未設定'}</div>
                     </div>
                 </div>
                 
@@ -2302,7 +2486,7 @@
                     <div class="detail-setting-icon" style="background: #e8eaf6; color: #3f51b5;">💬</div>
                     <div class="detail-setting-content">
                         <div class="detail-setting-label">レースの感想</div>
-                        <div class="detail-setting-value">${race.impression || '未設定'}</div>
+                        <div class="detail-setting-value pre-wrap">${race.impression || '未設定'}</div>
                     </div>
                 </div>
                 
@@ -2738,12 +2922,16 @@
                 race.isFavorite = !race.isFavorite;
                 race.updatedAt = new Date().toISOString();
                 await saveRaceToDB(race);
-                if (currentTab === 'favorites') {
+                // グループ画面の「お気に入り」タブ表示中
+                if (document.getElementById('groupScreen').classList.contains('active') && currentTab === 'favorites') {
                     if (race.isFavorite) {
                         prependRaceToList(race);
                     } else {
                         removeRaceFromList(raceId);
                     }
+                } else if (document.getElementById('favoritesScreen').classList.contains('active')) {
+                    // お気に入り画面表示中
+                    renderFavoritesList();
                 } else {
                     updateRaceListItem(race);
                 }
@@ -3182,6 +3370,8 @@
             document.getElementById('historyModal').addEventListener('click', function(e) {
                 if (e.target === this) closeHistoryModal();
             });
+            // 初期状態で戻るボタンを適切に表示（ホームでは隠す）
+            updateBackButtonVisibility();
         });
     </script>
 </body>
