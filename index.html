@@ -1695,7 +1695,7 @@
         }
 
         function showCreateGroupPrompt() {
-            const name = prompt('新しいグループ名');
+            const name = prompt('新しいグループ名（例：2025JC仙台大会前日練習）');
             if (!name) return;
             const trimmed = name.trim();
             if (!trimmed) return;
@@ -2828,7 +2828,7 @@
                 editGroupSelect.onchange = (e) => {
                     if (e.target.value === '__new__') {
                         // 新規グループ作成
-                        const name = prompt('新しいグループ名');
+                        const name = prompt('新しいグループ名（例：2025JC仙台大会前日練習）');
                         if (name && name.trim()) {
                             const group = { id: 'g_' + Date.now().toString(), name: name.trim(), createdAt: new Date().toISOString() };
                             groups.push(group);
