@@ -136,6 +136,14 @@
         .header-btn:active { background: rgba(255, 59, 48, 0.2); }
         .header-btn:focus { outline: none; box-shadow: 0 0 0 2px rgba(255,59,48,0.25); }
         .header-btn svg { width: 18px; height: 18px; }
+        .header-btn.install-btn {
+            border-color: #007AFF;
+            color: #007AFF;
+            background: rgba(0, 122, 255, 0.08);
+        }
+        .header-btn.install-btn:hover { background: rgba(0, 122, 255, 0.15); }
+        .header-btn.install-btn:active { background: rgba(0, 122, 255, 0.2); }
+        .header-btn.install-btn:focus { box-shadow: 0 0 0 2px rgba(0,122,255,0.25); }
 
         .container {
             max-width: 600px;
@@ -901,6 +909,7 @@
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"></path>
                     </svg>
                 </button>
+                <button id="installBtn" class="header-btn install-btn" hidden title="ホーム画面に追加">インストール</button>
                 <div class="version-info" id="versionInfo" title="変更履歴を表示">Loading...</div>
             </div>
         </div>
@@ -1237,6 +1246,8 @@
         // 戻るボタン用の簡易履歴
         let navStack = [];
         // ホーム画面のタブは廃止。ヘッダーのハートからお気に入り画面へ。
+        let installPromptEvent = null;
+        const installBtn = document.getElementById('installBtn');
         
         // 動画ファイル管理
         let videoFiles = new Map(); // raceId -> File object
@@ -2961,19 +2972,6 @@
             }
         });
 
-        // Service Worker登録
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdpbnN0YWxsJywgZnVuY3Rpb24oZXZlbnQpIHsKICAgIGNvbnNvbGUubG9nKCdTZXJ2aWNlIFdvcmtlciBpbnN0YWxsZWQnKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoJ2FjdGl2YXRlJywgZnVuY3Rpb24oZXZlbnQpIHsKICAgIGNvbnNvbGUubG9nKCdTZXJ2aWNlIFdvcmtlciBhY3RpdmF0ZWQnKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoJ2ZldGNoJywgZnVuY3Rpb24oZXZlbnQpIHsKICAgIC8vIEZvciBub3csIGp1c3QgcGFzcyB0aHJvdWdoIGFsbCByZXF1ZXN0cwogICAgZXZlbnQucmVzcG9uZFdpdGgoZmV0Y2goZXZlbnQucmVxdWVzdCkpOwp9KTs=')
-                .then(function(registration) {
-                    console.log('Service Worker registered successfully');
-                })
-                .catch(function(error) {
-                    console.log('Service Worker registration failed');
-                });
-            });
-        }
-
         // タブ切り替え
         function switchTab(tab) {
             currentTab = tab;
@@ -3297,6 +3295,28 @@
             element.addEventListener('touchmove', touchMoveHandler, { passive: false });
             element.addEventListener('touchend', touchEndHandler, { passive: false });
         }
+
+        // インストール案内
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            installPromptEvent = e;
+            if (installBtn) installBtn.hidden = false;
+        });
+
+        if (installBtn) {
+            installBtn.addEventListener('click', async function() {
+                if (!installPromptEvent) return;
+                installPromptEvent.prompt();
+                await installPromptEvent.userChoice;
+                installPromptEvent = null;
+                installBtn.hidden = true;
+            });
+        }
+
+        window.addEventListener('appinstalled', function() {
+            installPromptEvent = null;
+            if (installBtn) installBtn.hidden = true;
+        });
 
         // Service Worker の登録
         if ('serviceWorker' in navigator && location.protocol !== 'file:') {

@@ -1,5 +1,5 @@
 // sw.js
-const VERSION = 'v1.0.24';
+const VERSION = 'v1.0.25';
 // Service Worker が管理できるスコープの先頭URL（例: https://user.github.io/repo/）
 const BASE_URL = self.registration.scope;
 const CACHE_NAME = `mini4wd-race-memo-${VERSION}`;
@@ -9,6 +9,8 @@ const ASSETS = [
   new URL('./', BASE_URL).toString(),            // index.html の GET にもヒット
   new URL('./index.html', BASE_URL).toString(),
   new URL('./manifest.json', BASE_URL).toString(),
+  new URL('./icons/icon-192.png', BASE_URL).toString(),
+  new URL('./icons/icon-512.png', BASE_URL).toString(),
   new URL('./history.txt', BASE_URL).toString(),
   new URL('./sw.js', BASE_URL).toString()
 ];
