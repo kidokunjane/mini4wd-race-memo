@@ -23,6 +23,17 @@
         :root {
             /* ヘッダー高さ + セーフエリア上部を考慮したオフセット */
             --header-offset: calc(56px + env(safe-area-inset-top, 0));
+            --bg: #f5f7fb;
+            --surface: #ffffff;
+            --text: #111827;
+            --muted: #6b7280;
+            --primary: #007aff;
+            --primary-dark: #0056cc;
+            --border: #e5e7eb;
+            --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+            --radius: 12px;
+            --danger: #dc2626;
+            --success: #16a34a;
         }
         * {
             margin: 0;
@@ -888,6 +899,114 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        /* Theme alignment across tools */
+        body {
+            font-family: system-ui, -apple-system, "Noto Sans JP", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .safe-area { background: var(--bg); }
+        .safe-area::before { background: var(--surface); }
+
+        .header {
+            background: var(--surface);
+            color: var(--text);
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .header h1 { color: var(--text); }
+
+        .home-icon { color: var(--primary); }
+        .home-icon:hover { background-color: rgba(0, 122, 255, 0.08); }
+
+        .version-info { color: var(--muted); }
+
+        .header-btn {
+            border: 1px solid var(--border);
+            background: #ffffff;
+            color: var(--primary);
+        }
+        .header-btn:hover { background: rgba(0, 122, 255, 0.08); border-color: rgba(0, 122, 255, 0.3); }
+        .header-btn:active { background: rgba(0, 122, 255, 0.14); }
+        .header-btn:focus { box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2); }
+        .header-btn.install-btn {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(0, 122, 255, 0.08);
+        }
+        .header-btn.install-btn:hover { background: rgba(0, 122, 255, 0.15); }
+        .header-btn.install-btn:active { background: rgba(0, 122, 255, 0.2); }
+        .header-btn.install-btn:focus { box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.25); }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            border-radius: var(--radius);
+        }
+
+        .form-group label { color: var(--text); }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        .btn {
+            background: var(--primary);
+            border-radius: var(--radius);
+            box-shadow: 0 8px 20px rgba(0, 122, 255, 0.25);
+        }
+        .btn:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 12px 28px rgba(0, 122, 255, 0.3);
+        }
+        .btn-secondary { background: #6b7280; }
+        .btn-danger { background: var(--danger); }
+        .btn-success { background: var(--success); }
+
+        .tabs {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: rgba(0, 122, 255, 0.08);
+        }
+        .tab:hover:not(.active) {
+            background: rgba(0, 122, 255, 0.04);
+            color: var(--primary);
+        }
+
+        .race-item::before { background: var(--primary); }
+        .race-item.swipe-delete { background: var(--danger); }
+        .race-item .swipe-action { background: var(--danger); }
+
+        .favorite-btn.favorited { color: var(--danger); }
+
+        .group-delete-btn {
+            background: rgba(220, 38, 38, 0.08);
+            color: var(--danger);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+        }
+        .group-delete-btn:hover { background: rgba(220, 38, 38, 0.15); }
+
+        .add-event-btn {
+            background: var(--primary);
+            box-shadow: 0 6px 18px rgba(0, 122, 255, 0.25);
+        }
+        .add-event-btn:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 10px 26px rgba(0, 122, 255, 0.35);
         }
     </style>
 </head>
